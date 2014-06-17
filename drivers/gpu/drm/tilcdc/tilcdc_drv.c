@@ -285,9 +285,7 @@ static int tilcdc_load(struct drm_device *dev, unsigned long flags)
 			break;
 	}
 
-	priv->fbdev = drm_fbdev_cma_init(dev, bpp,
-			dev->mode_config.num_crtc,
-			dev->mode_config.num_connector);
+	priv->fbdev = drm_fbdev_cma_init(dev, bpp);
 	if (IS_ERR(priv->fbdev)) {
 		ret = PTR_ERR(priv->fbdev);
 		goto fail_irq_uninstall;
