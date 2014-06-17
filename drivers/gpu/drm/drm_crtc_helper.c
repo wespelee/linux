@@ -1020,3 +1020,65 @@ int drm_helper_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
 	return drm_plane_helper_commit(plane, plane_state, old_fb);
 }
 EXPORT_SYMBOL(drm_helper_crtc_mode_set_base);
+
+static bool drm_stub_encoder_mode_fixup(struct drm_encoder *encoder,
+					const struct drm_display_mode *mode,
+					struct drm_display_mode *adjusted_mode)
+{
+	return true;
+}
+
+static void drm_stub_encoder_mode_set(struct drm_encoder *encoder,
+				      struct drm_display_mode *mode,
+				      struct drm_display_mode *adjusted_mode)
+{
+}
+
+static void drm_stub_encoder_dpms(struct drm_encoder *encoder, int state)
+{
+}
+
+static void drm_stub_encoder_prepare(struct drm_encoder *encoder)
+{
+}
+
+static void drm_stub_encoder_commit(struct drm_encoder *encoder)
+{
+}
+
+const struct drm_encoder_helper_funcs drm_stub_encoder_helper_funcs = {
+	.dpms = drm_stub_encoder_dpms,
+	.mode_fixup = drm_stub_encoder_mode_fixup,
+	.mode_set = drm_stub_encoder_mode_set,
+	.prepare = drm_stub_encoder_prepare,
+	.commit = drm_stub_encoder_commit,
+};
+EXPORT_SYMBOL(drm_stub_encoder_helper_funcs);
+
+const struct drm_encoder_funcs drm_stub_encoder_funcs = {
+	.destroy = drm_encoder_cleanup,
+};
+EXPORT_SYMBOL(drm_stub_encoder_funcs);
+
+/**
+ * Implementation of a trivial encoder for single-CRTC devices that
+ * will do all of their modesetting in the CRTC or connector hooks.
+ */
+struct drm_encoder *
+drm_stub_encoder_init(struct drm_device *dev)
+{
+	struct drm_encoder *encoder;
+
+	encoder = kzalloc(sizeof(struct drm_encoder), GFP_KERNEL);
+	if (!encoder)
+		return NULL;
+
+	encoder->possible_crtcs = 0x1;
+
+	drm_encoder_init(dev, encoder, &drm_stub_encoder_funcs,
+			 DRM_MODE_ENCODER_DAC);
+	drm_encoder_helper_add(encoder, &drm_stub_encoder_helper_funcs);
+
+	return encoder;
+}
+EXPORT_SYMBOL(drm_stub_encoder_init);
