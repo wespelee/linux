@@ -150,6 +150,10 @@ void vc4_debugfs_cleanup(struct drm_minor *minor);
 /* vc4_drv.c */
 void __iomem *vc4_ioremap_regs(struct platform_device *dev, int index);
 
+/* vc4_gem.c */
+int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
+			struct drm_file *file_priv);
+
 /* vc4_hdmi.c */
 extern struct platform_driver vc4_hdmi_driver;
 int vc4_hdmi_debugfs_regs(struct seq_file *m, void *unused);
