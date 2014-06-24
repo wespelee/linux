@@ -143,7 +143,12 @@ static struct map_desc bcm2708_io_desc[] __initdata = {
 	 .virtual = IO_ADDRESS(GPIO_BASE),
 	 .pfn = __phys_to_pfn(GPIO_BASE),
 	 .length = SZ_4K,
-	 .type = MT_DEVICE}
+	 .type = MT_DEVICE},
+	{
+         .virtual = IO_ADDRESS(VC4_BASE),
+         .pfn = __phys_to_pfn(VC4_BASE),
+         .length = SZ_4K,
+         .type = MT_DEVICE}
 };
 
 void __init bcm2708_map_io(void)
