@@ -269,7 +269,7 @@ vc4_cl_validate(struct drm_device *dev, struct drm_vc4_submit_cl *args,
 	 * read the contents back for validation, and I think the
 	 * bo->vaddr is uncached access.
 	 */
-	temp = kmalloc(exec_size, GFP_KERNEL);
+	temp = kmalloc(temp_size, GFP_KERNEL);
 	if (!temp) {
 		DRM_ERROR("Failed to allocate storage for copying "
 			  "in bin/render CLs.\n");
