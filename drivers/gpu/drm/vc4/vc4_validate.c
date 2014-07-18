@@ -370,7 +370,7 @@ validate_shader_rec(struct drm_device *dev,
 		12, /* vbo */
 	};
 	struct drm_gem_cma_object *bo[ARRAY_SIZE(gl_bo_offsets) + 8];
-	const uint32_t *bo_offsets;
+	const int *bo_offsets;
 	uint32_t nr_attributes = 0, nr_bo, packet_size;
 	int i;
 
@@ -443,8 +443,10 @@ vc4_validate_shader_recs(struct drm_device *dev,
 			DRM_ERROR("unexpected shader rec offset: "
 				  "0x%08x vs 0x%08x\n",
 				  exec->shader_state[i].addr & ~0xf,
-				  validated - exec->exec_bo->vaddr -
-				  (exec->shader_paddr - exec->exec_bo->paddr));
+				  (int)(validated -
+                                        exec->exec_bo->vaddr -
+                                        (exec->shader_paddr -
+                                         exec->exec_bo->paddr)));
 			return -EINVAL;
 		}
 
