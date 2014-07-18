@@ -115,12 +115,9 @@ validate_indexed_prim_list(VALIDATE_ARGS)
 static int
 validate_gl_shader_state(VALIDATE_ARGS)
 {
-	struct drm_gem_cma_object *shader;
 	uint32_t i = exec->shader_state_count++;
 
-	shader = exec->bo[exec->bo_index[0]];
-
-	if (i >= exec->shader_state_size) {
+	if (i >= exec->shader_state_size) { /* XXX? */
 		DRM_ERROR("More requests for shader states than declared\n");
 		return -EINVAL;
 	}
