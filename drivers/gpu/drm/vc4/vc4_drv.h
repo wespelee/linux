@@ -22,6 +22,7 @@
  */
 
 #include "drmP.h"
+#include "drm_gem_cma_helper.h"
 
 struct vc4_dev {
 	struct drm_device dev;

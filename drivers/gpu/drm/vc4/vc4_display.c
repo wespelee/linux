@@ -33,7 +33,6 @@
 
 #include "drm_crtc.h"
 #include "drm_crtc_helper.h"
-#include "drm_gem_cma_helper.h"
 #include "drm_fb_cma_helper.h"
 #include "vc4_drv.h"
 #include "vc4_display.h"
