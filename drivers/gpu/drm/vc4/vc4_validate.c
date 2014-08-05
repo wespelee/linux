@@ -39,7 +39,6 @@
  * is where GEM relocation processing happens.
  */
 
-#include "drm_gem_cma_helper.h"
 #include "vc4_drv.h"
 #include "vc4_packet.h"
 #include "vc4_regs.h"

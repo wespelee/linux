@@ -28,7 +28,6 @@
 #include <mach/vcio.h>
 
 #include "uapi/drm/vc4_drm.h"
-#include "drm_gem_cma_helper.h"
 #include "vc4_drv.h"
 #include "vc4_regs.h"
 
