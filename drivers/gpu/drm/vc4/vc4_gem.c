@@ -148,11 +148,11 @@ vc4_flush_caches(struct drm_device *dev)
 }
 
 static int
-vc4_submit(struct drm_device *dev, struct exec_info *args)
+vc4_submit(struct drm_device *dev, struct exec_info *exec)
 {
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
-	uint32_t ct0ca = args->ct0ca, ct0ea = args->ct0ea;
-	uint32_t ct1ca = args->ct1ca, ct1ea = args->ct1ea;
+	uint32_t ct0ca = exec->ct0ca, ct0ea = exec->ct0ea;
+	uint32_t ct1ca = exec->ct1ca, ct1ea = exec->ct1ea;
 	int ret;
 
 	vc4_flush_caches(dev);
