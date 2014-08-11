@@ -65,9 +65,33 @@ thread_stopped(struct drm_device *dev, uint32_t thread)
 }
 
 static int
-wait_for_bin_thread(struct drm_device *dev)
+try_adding_overflow_memory(struct drm_device *dev, struct exec_info *exec)
 {
-	int i;
+	struct vc4_bo_list_entry *entry = kmalloc(sizeof(*entry), GFP_KERNEL);
+
+	if (!entry)
+		return -ENOMEM;
+
+	entry->bo = drm_gem_cma_create(dev, 256 * 1024);
+	if (IS_ERR(entry->bo)) {
+		int ret = PTR_ERR(entry->bo);
+		DRM_ERROR("Couldn't allocate binner overflow mem\n");
+		kfree(entry);
+		return ret;
+	}
+
+	list_add_tail(&entry->head, &exec->overflow_list);
+
+	VC4_WRITE(V3D_BPOA, entry->bo->paddr);
+	VC4_WRITE(V3D_BPOS, entry->bo->base.size);
+
+	return 0;
+}
+
+static int
+wait_for_bin_thread(struct drm_device *dev, struct exec_info *exec)
+{
+	int i, ret;
 
 	for (i = 0; i < 1000000; i++) {
 		if (thread_stopped(dev, 0)) {
@@ -80,9 +104,9 @@ wait_for_bin_thread(struct drm_device *dev)
 		}
 
 		if (VC4_READ(V3D_PCS) & V3D_BMOOM) {
-			/* XXX */
-			DRM_ERROR("binner oom\n");
-			return -EINVAL;
+			ret = try_adding_overflow_memory(dev, exec);
+			if (ret)
+				return ret;
 		}
 	}
 
@@ -143,7 +167,7 @@ vc4_submit(struct drm_device *dev, struct exec_info *exec)
 
 	submit_cl(dev, 0, ct0ca, ct0ea);
 
-	ret = wait_for_bin_thread(dev);
+	ret = wait_for_bin_thread(dev, exec);
 	if (ret)
 		return ret;
 
@@ -369,6 +393,7 @@ vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 
 	memset(&exec, 0, sizeof(exec));
 	exec.args = data;
+	INIT_LIST_HEAD(&exec.overflow_list);
 
 	mutex_lock(&dev->struct_mutex);
 
@@ -391,6 +416,15 @@ fail:
 		for (i = 0; i < exec.bo_count; i++)
 			drm_gem_object_unreference(&exec.bo[i].bo->base);
 		kfree(exec.bo);
+	}
+
+	while (!list_empty(&exec.overflow_list)) {
+		struct vc4_bo_list_entry *entry =
+			list_first_entry(&exec.overflow_list,
+					 struct vc4_bo_list_entry, head);
+		drm_gem_object_unreference(&entry->bo->base);
+		list_del(&entry->head);
+		kfree(entry);
 	}
 
 	drm_gem_object_unreference(&exec.exec_bo->base);
