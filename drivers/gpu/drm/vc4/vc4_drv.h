@@ -216,6 +216,9 @@ void vc4_debugfs_cleanup(struct drm_minor *minor);
 /* vc4_display.c */
 int vc4_modeset_init(struct drm_device *dev);
 
+/* vc4_drv.c */
+int vc4_set_platform_qpu_enable(bool on);
+
 /* vc4_gem.c */
 int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 			struct drm_file *file_priv);
