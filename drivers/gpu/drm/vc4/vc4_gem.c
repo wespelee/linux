@@ -32,12 +32,11 @@
 #include "vc4_regs.h"
 
 static void
-thread_reset(struct drm_device *dev)
+vc4_reset(struct drm_device *dev)
 {
-	DRM_INFO("Resetting threads\n");
-	VC4_WRITE(V3D_CT0CS, V3D_CTRSTA);
-	VC4_WRITE(V3D_CT1CS, V3D_CTRSTA);
-	barrier();
+	DRM_INFO("Resetting GPU.\n");
+	vc4_set_platform_qpu_enable(false);
+	vc4_set_platform_qpu_enable(true);
 }
 
 static void
@@ -129,8 +128,7 @@ wait_for_bin_thread(struct drm_device *dev, struct exec_info *exec)
 	}
 
 	if (VC4_READ(V3D_PCS) & V3D_BMOOM) {
-		/* XXX */
-		DRM_ERROR("binner oom and stopped\n");
+		DRM_ERROR("binner oom and stopped.\n");
 		return -EINVAL;
 	}
 
@@ -448,7 +446,7 @@ vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 
 	ret = vc4_submit(dev, &exec);
 	if (ret) {
-		thread_reset(dev);
+		vc4_reset(dev);
 		goto fail;
 	}
 

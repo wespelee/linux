@@ -38,8 +38,8 @@
 #define DRIVER_MINOR 0
 #define DRIVER_PATCHLEVEL 0
 
-static int
-set_platform_qpu_enable(bool on)
+int
+vc4_set_platform_qpu_enable(bool on)
 {
 	struct {
 		u32 size;
@@ -132,7 +132,7 @@ vc4_drm_load(struct drm_device *dev, unsigned long flags)
 	dev_set_drvdata(dev->dev, dev);
 	dev->dev_private = vc4;
 
-	set_platform_qpu_enable(true);
+	vc4_set_platform_qpu_enable(true);
 
 	ret = map_regs(dev);
 	if (ret)
@@ -162,7 +162,7 @@ static int vc4_drm_unload(struct drm_device *dev)
 
 	drm_mode_config_cleanup(dev);
 
-	set_platform_qpu_enable(false);
+	vc4_set_platform_qpu_enable(false);
 
 	devm_iounmap(dev->dev, vc4->vc4_regs);
 	devm_iounmap(dev->dev, vc4->hvs_regs);
