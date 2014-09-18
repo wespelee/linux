@@ -88,44 +88,52 @@ try_adding_overflow_memory(struct drm_device *dev, struct exec_info *exec)
 	return 0;
 }
 
+static bool
+vc4_thread_finished(struct drm_device *dev, struct exec_info *exec)
+{
+	bool stopped = thread_stopped(dev, 0);
+
+	/* If the thread is merely paused waiting for overflow memory,
+	 * hand some to it so we can make progress.
+	 */
+	if (VC4_READ(V3D_PCS) & V3D_BMOOM) {
+		int ret = try_adding_overflow_memory(dev, exec);
+		return ret != 0;
+	}
+
+	return stopped;
+}
+
 static int
 wait_for_bin_thread(struct drm_device *dev, struct exec_info *exec)
 {
-	int i, ret;
+	int ret;
 
-	for (i = 0; i < 1000000; i++) {
-		if (thread_stopped(dev, 0)) {
-			if (VC4_READ(V3D_PCS) & V3D_BMOOM) {
-				/* XXX */
-				DRM_ERROR("binner oom and stopped\n");
-				return -EINVAL;
-			}
-			return 0;
-		}
-
-		if (VC4_READ(V3D_PCS) & V3D_BMOOM) {
-			ret = try_adding_overflow_memory(dev, exec);
-			if (ret)
-				return ret;
-		}
+	ret = wait_for(vc4_thread_finished(dev, exec), 1000);
+	if (ret) {
+		DRM_ERROR("timeout waiting for bin thread idle\n");
+		return ret;
 	}
 
-	DRM_ERROR("timeout waiting for bin thread idle\n");
-	return -EINVAL;
+	if (VC4_READ(V3D_PCS) & V3D_BMOOM) {
+		/* XXX */
+		DRM_ERROR("binner oom and stopped\n");
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int
 wait_for_idle(struct drm_device *dev)
 {
-	int i;
+	int ret;
 
-	for (i = 0; i < 1000000; i++) {
-		if (VC4_READ(V3D_PCS) == 0)
-			return 0;
-	}
+	ret = wait_for(VC4_READ(V3D_PCS) == 0, 1000);
+	if (ret)
+		DRM_ERROR("timeout waiting for idle\n");
 
-	DRM_ERROR("timeout waiting for idle\n");
-	return -EINVAL;
+	return ret;
 }
 
 /*
