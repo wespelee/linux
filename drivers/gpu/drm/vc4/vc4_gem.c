@@ -200,9 +200,6 @@ vc4_submit(struct drm_device *dev, struct exec_info *exec)
 	if (ret)
 		return ret;
 
-	DRM_INFO("BFC 0x%02x -> 0x%02x\n",
-		 initial_bfc, VC4_READ(V3D_BFC));
-
 	return 0;
 }
 
