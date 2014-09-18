@@ -260,6 +260,34 @@ struct vc4_validated_shader_info
 	struct vc4_texture_sample_info *texture_samples;
 };
 
+/**
+ * _wait_for - magic (register) wait macro
+ *
+ * Does the right thing for modeset paths when run under kdgb or similar atomic
+ * contexts. Note that it's important that we check the condition again after
+ * having timed out, since the timeout could be due to preemption or similar and
+ * we've never had a chance to check the condition before the timeout.
+ */
+#define _wait_for(COND, MS, W) ({ \
+	unsigned long timeout__ = jiffies + msecs_to_jiffies(MS) + 1;	\
+	int ret__ = 0;							\
+	while (!(COND)) {						\
+		if (time_after(jiffies, timeout__)) {			\
+			if (!(COND))					\
+				ret__ = -ETIMEDOUT;			\
+			break;						\
+		}							\
+		if (W && drm_can_sleep())  {				\
+			msleep(W);					\
+		} else {						\
+			cpu_relax();					\
+		}							\
+	}								\
+	ret__;								\
+})
+
+#define wait_for(COND, MS) _wait_for(COND, MS, 1)
+
 /* vc4_bo.c */
 void vc4_free_object(struct drm_gem_object *gem_obj);
 struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t size);
