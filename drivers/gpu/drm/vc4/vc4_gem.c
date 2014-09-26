@@ -154,6 +154,21 @@ wait_for_render_thread(struct drm_device *dev, u32 initial_rfc)
 }
 */
 
+static void
+vc4_flush_caches(struct drm_device *dev)
+{
+	VC4_WRITE(V3D_L2CACTL,
+		  V3D_L2CACTL_L2CCLR);
+
+	VC4_WRITE(V3D_SLCACTL,
+		  VC4_SET_FIELD(0xf, V3D_SLCACTL_T1CC) |
+		  VC4_SET_FIELD(0xf, V3D_SLCACTL_T0CC) |
+		  VC4_SET_FIELD(0xf, V3D_SLCACTL_UCC) |
+		  VC4_SET_FIELD(0xf, V3D_SLCACTL_ICC));
+
+	barrier();
+}
+
 static int
 vc4_submit(struct drm_device *dev, struct exec_info *exec)
 {
@@ -162,9 +177,7 @@ vc4_submit(struct drm_device *dev, struct exec_info *exec)
 	uint32_t ct1ca = exec->ct1ca, ct1ea = exec->ct1ea;
 	int ret;
 
-	/* flushes caches */
-	VC4_WRITE(V3D_L2CACTL, 1 << 2);
-	barrier();
+	vc4_flush_caches(dev);
 
 	/* Disable the binner's pre-loaded overflow memory address */
 	VC4_WRITE(V3D_BPOA, 0);
