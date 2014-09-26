@@ -21,6 +21,17 @@
  * IN THE SOFTWARE.
  */
 
+#define VC4_MASK(high, low) (((1 << ((high) - (low) + 1)) - 1) << (low))
+/* Using the GNU statement expression extension */
+#define VC4_SET_FIELD(value, field)                                       \
+        ({                                                                \
+                uint32_t fieldval = (value) << field ## _SHIFT;		  \
+                WARN_ON((fieldval & ~ field ## _MASK) != 0);              \
+                fieldval & field ## _MASK;                                \
+         })
+
+#define VC4_GET_FIELD(word, field) (((word)  & field ## _MASK) >> field ## _SHIFT)
+
 #define V3D_IDENT0   0x00000
 # define VC4_EXPECTED_IDENT0 \
 	((2 << 24) | \
@@ -29,6 +40,20 @@
 	 ('D' << 16))
 
 #define V3D_IDENT1   0x00004
+/* Multiples of 1kb */
+# define V3D_IDENT1_VPM_SIZE_MASK                      VC4_MASK(31, 28)
+# define V3D_IDENT1_VPM_SIZE_SHIFT                     28
+# define V3D_IDENT1_NSEM_MASK                          VC4_MASK(23, 16)
+# define V3D_IDENT1_NSEM_SHIFT                         16
+# define V3D_IDENT1_TUPS_MASK                          VC4_MASK(15, 12)
+# define V3D_IDENT1_TUPS_SHIFT                         12
+# define V3D_IDENT1_QUPS_MASK                          VC4_MASK(11, 8)
+# define V3D_IDENT1_QUPS_SHIFT                         8
+# define V3D_IDENT1_NSLC_MASK                          VC4_MASK(7, 4)
+# define V3D_IDENT1_NSLC_SHIFT                         4
+# define V3D_IDENT1_REV_MASK                           VC4_MASK(3, 0)
+# define V3D_IDENT1_REV_SHIFT                          0
+
 #define V3D_IDENT2   0x00008
 #define V3D_SCRATCH  0x00010
 #define V3D_L2CACTL  0x00020

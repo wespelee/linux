@@ -180,9 +180,29 @@ hvs_regs(struct seq_file *m, void *unused)
 	return 0;
 }
 
+static int
+vc4_ident(struct seq_file *m, void *unused)
+{
+	struct drm_info_node *node = (struct drm_info_node *) m->private;
+	struct drm_device *dev = node->minor->dev;
+	uint32_t ident1 = VC4_READ(V3D_IDENT1);
+	uint32_t nslc = VC4_GET_FIELD(ident1, V3D_IDENT1_NSLC);
+	uint32_t tups = VC4_GET_FIELD(ident1, V3D_IDENT1_TUPS);
+	uint32_t qups = VC4_GET_FIELD(ident1, V3D_IDENT1_QUPS);
+
+	seq_printf(m, "Revision:   %d\n", VC4_GET_FIELD(ident1, V3D_IDENT1_REV));
+	seq_printf(m, "Slices:     %d\n", nslc);
+	seq_printf(m, "TMUs:       %d\n", nslc * tups);
+	seq_printf(m, "QPUs:       %d\n", nslc * qups);
+	seq_printf(m, "Semaphores: %d\n", VC4_GET_FIELD(ident1, V3D_IDENT1_NSEM));
+
+	return 0;
+}
+
 static const struct drm_info_list vc4_debugfs_list[] = {
 	{"vc4_regs", vc4_regs, 0},
 	{"hvs_regs", hvs_regs, 0},
+	{"vc4_ident", vc4_ident, 0},
 };
 #define VC4_DEBUGFS_ENTRIES ARRAY_SIZE(vc4_debugfs_list)
 
