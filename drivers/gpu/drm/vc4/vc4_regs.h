@@ -57,7 +57,20 @@
 #define V3D_IDENT2   0x00008
 #define V3D_SCRATCH  0x00010
 #define V3D_L2CACTL  0x00020
+# define V3D_L2CACTL_L2CCLR                            (1 << 2)
+# define V3D_L2CACTL_L2CDIS                            (1 << 1)
+# define V3D_L2CACTL_L2CENA                            (1 << 0)
+
 #define V3D_SLCACTL  0x00024
+# define V3D_SLCACTL_T1CC_MASK                         VC4_MASK(27, 24)
+# define V3D_SLCACTL_T1CC_SHIFT                        24
+# define V3D_SLCACTL_T0CC_MASK                         VC4_MASK(19, 16)
+# define V3D_SLCACTL_T0CC_SHIFT                        16
+# define V3D_SLCACTL_UCC_MASK                          VC4_MASK(11, 8)
+# define V3D_SLCACTL_UCC_SHIFT                         8
+# define V3D_SLCACTL_ICC_MASK                          VC4_MASK(3, 0)
+# define V3D_SLCACTL_ICC_SHIFT                         0
+
 #define V3D_INTCTL   0x00030
 #define V3D_INTENA   0x00034
 #define V3D_INTDIS   0x00038
