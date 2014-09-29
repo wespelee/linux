@@ -103,6 +103,16 @@ map_regs(struct drm_device *dev)
 	return 0;
 }
 
+static void
+vc4_init_hw(struct drm_device *dev)
+{
+	/* Take all the memory that would have been reserved for user
+	 * QPU programs, since we don't have an interface for running
+	 * them, anyway.
+	 */
+	VC4_WRITE(V3D_VPMBASE, 0);
+}
+
 static int
 vc4_drm_load(struct drm_device *dev, unsigned long flags)
 {
@@ -133,6 +143,8 @@ vc4_drm_load(struct drm_device *dev, unsigned long flags)
 			  VC4_READ(V3D_IDENT0), VC4_EXPECTED_IDENT0);
 		goto fail;
 	}
+
+	vc4_init_hw(dev);
 
 	vc4_modeset_init(dev);
 
