@@ -101,7 +101,7 @@ try_adding_overflow_memory(struct drm_device *dev, struct exec_info *exec)
 }
 
 static bool
-vc4_thread_finished(struct drm_device *dev, struct exec_info *exec)
+vc4_bin_finished(struct drm_device *dev, struct exec_info *exec)
 {
 	bool stopped = thread_stopped(dev, 0);
 
@@ -121,7 +121,7 @@ wait_for_bin_thread(struct drm_device *dev, struct exec_info *exec)
 {
 	int ret;
 
-	ret = wait_for(vc4_thread_finished(dev, exec), 1000);
+	ret = wait_for(vc4_bin_finished(dev, exec), 1000);
 	if (ret) {
 		DRM_ERROR("timeout waiting for bin thread idle\n");
 		return ret;
