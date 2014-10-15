@@ -197,10 +197,6 @@ vc4_submit(struct drm_device *dev, struct exec_info *exec)
 	if (ret)
 		return ret;
 
-	ret = wait_for_idle(dev);
-	if (ret)
-		return ret;
-
 	WARN_ON(!thread_stopped(dev, 0));
 	if (VC4_READ(V3D_CTNCS(0)) & V3D_CTERR) {
 		DRM_ERROR("thread 0 stopped with error\n");
