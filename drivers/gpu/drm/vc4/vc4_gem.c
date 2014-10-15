@@ -136,34 +136,18 @@ wait_for_bin_thread(struct drm_device *dev, struct exec_info *exec)
 }
 
 static int
-wait_for_idle(struct drm_device *dev)
+wait_for_render_thread(struct drm_device *dev)
 {
 	int ret;
 
-	ret = wait_for(VC4_READ(V3D_PCS) == 0, 1000);
-	if (ret)
-		DRM_ERROR("timeout waiting for idle\n");
-
-	return ret;
-}
-
-/*
-static int
-wait_for_render_thread(struct drm_device *dev, u32 initial_rfc)
-{
-	int i;
-
-	for (i = 0; i < 1000000; i++) {
-		if ((VC4_READ(V3D_RFC) & 0xff) == ((initial_rfc + 1) & 0xff))
-			return 0;
+	ret = wait_for(thread_stopped(dev, 1), 1000);
+	if (ret) {
+		DRM_ERROR("timeout waiting for render thread idle\n");
+		return ret;
 	}
 
-	DRM_ERROR("timeout waiting for render thread idle: "
-		  "0x%08x start vs 0x%08x end\n",
-		  initial_rfc, VC4_READ(V3D_RFC));
-	return -EINVAL;
+	return 0;
 }
-*/
 
 static void
 vc4_flush_caches(struct drm_device *dev)
@@ -225,12 +209,7 @@ vc4_submit(struct drm_device *dev, struct exec_info *exec)
 
 	submit_cl(dev, 1, ct1ca, ct1ea);
 
-	/* XXX: this errored out.  but wait_for_idle() seems like enough.
-	ret = wait_for_render_thread(dev, initial_rfc);
-	if (ret)
-		return ret;
-	*/
-	ret = wait_for_idle(dev);
+	ret = wait_for_render_thread(dev);
 	if (ret)
 		return ret;
 
