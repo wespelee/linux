@@ -649,6 +649,11 @@ static struct resource vc4_drm_resources[] = {
 		.end = BCM2708_PERI_BASE + 0x00402000 + 4 * SZ_4K - 1,
 		.flags = IORESOURCE_MEM,
 	},
+	{
+		.start = IRQ_3D,
+		.end = IRQ_3D,
+		.flags = IORESOURCE_IRQ,
+	},
 };
 
 static struct platform_device vc4_drm_device = {
