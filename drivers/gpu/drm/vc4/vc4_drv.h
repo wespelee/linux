@@ -50,6 +50,13 @@ struct vc4_dev {
 
 	/* Protects bo_cache and the BO stats. */
 	spinlock_t bo_lock;
+
+	/* List of struct vc4_list_bo_entry allocated to accomodate
+	 * binner overflow.  These will be freed when the exec is
+	 * done.
+	 */
+	struct list_head overflow_list;
+	struct work_struct overflow_mem_work;
 };
 
 static inline struct vc4_dev *
@@ -163,12 +170,6 @@ struct exec_info {
 	 * records, and uniforms.
 	 */
 	struct drm_gem_cma_object *exec_bo;
-
-	/* List of struct vc4_list_bo_entry allocated to accomodate
-	 * binner overflow.  These will be freed when the exec is
-	 * done.
-	 */
-	struct list_head overflow_list;
 
 	/**
 	 * This tracks the per-shader-record state (packet 64) that
@@ -322,6 +323,13 @@ int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 /* vc4_hdmi.c */
 extern struct platform_driver vc4_hdmi_driver;
 int vc4_hdmi_debugfs_regs(struct seq_file *m, void *unused);
+
+/* vc4_irq.c */
+irqreturn_t vc4_irq(int irq, void *arg);
+void vc4_irq_preinstall(struct drm_device *dev);
+int vc4_irq_postinstall(struct drm_device *dev);
+void vc4_irq_uninstall(struct drm_device *dev);
+void vc4_irq_reset(struct drm_device *dev);
 
 /* vc4_hvs.c */
 extern struct platform_driver vc4_hvs_driver;

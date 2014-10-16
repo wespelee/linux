@@ -82,9 +82,15 @@ static struct drm_driver vc4_drm_driver = {
 	.driver_features = (DRIVER_MODESET |
 			    DRIVER_ATOMIC |
 			    DRIVER_GEM |
+			    DRIVER_HAVE_IRQ |
 			    DRIVER_PRIME),
 	.lastclose = vc4_lastclose,
 	.preclose = vc4_drm_preclose,
+
+	.irq_handler = vc4_irq,
+	.irq_preinstall = vc4_irq_preinstall,
+	.irq_postinstall = vc4_irq_postinstall,
+	.irq_uninstall = vc4_irq_uninstall,
 
 	.enable_vblank = vc4_enable_vblank,
 	.disable_vblank = vc4_disable_vblank,
@@ -172,6 +178,8 @@ static int vc4_drm_bind(struct device *dev)
 		return -EPROBE_DEFER;
 	}
 	of_node_put(firmware_node);
+
+	INIT_LIST_HEAD(&vc4->overflow_list);
 
 	drm = drm_dev_alloc(&vc4_drm_driver, dev);
 	if (!drm)
