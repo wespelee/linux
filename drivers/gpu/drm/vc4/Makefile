@@ -7,6 +7,7 @@ vc4-y := \
 	vc4_drv.o \
 	vc4_display.o \
 	vc4_gem.o \
+	vc4_irq.o \
 	vc4_validate.o \
 	vc4_validate_shaders.o \
 	$()

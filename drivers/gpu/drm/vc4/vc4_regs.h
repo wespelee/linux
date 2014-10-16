@@ -74,6 +74,10 @@
 #define V3D_INTCTL   0x00030
 #define V3D_INTENA   0x00034
 #define V3D_INTDIS   0x00038
+# define V3D_INT_SPILLUSE                              (1 << 3)
+# define V3D_INT_OUTOMEM                               (1 << 2)
+# define V3D_INT_FLDONE                                (1 << 1)
+# define V3D_INT_FRDONE                                (1 << 0)
 
 #define V3D_CT0CS    0x00100
 #define V3D_CT1CS    0x00104

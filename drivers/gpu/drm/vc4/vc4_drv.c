@@ -123,6 +123,8 @@ vc4_drm_load(struct drm_device *dev, unsigned long flags)
 	if (!vc4)
 		return -ENOMEM;
 
+	INIT_LIST_HEAD(&vc4->overflow_list);
+
 	ret = dma_set_coherent_mask(dev->dev, DMA_BIT_MASK(32));
 	if (ret) {
 		kfree(vc4);
@@ -145,6 +147,12 @@ vc4_drm_load(struct drm_device *dev, unsigned long flags)
 		goto fail;
 	}
 
+	ret = drm_irq_install(dev, platform_get_irq(dev->platformdev, 0));
+	if (ret) {
+		DRM_ERROR("Failed to install IRQ handler\n");
+		goto fail;
+	}
+
 	vc4_init_hw(dev);
 
 	vc4_modeset_init(dev);
@@ -162,6 +170,8 @@ static int vc4_drm_unload(struct drm_device *dev)
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
 
 	drm_mode_config_cleanup(dev);
+
+	drm_irq_uninstall(dev);
 
 	vc4_set_platform_qpu_enable(false);
 
@@ -194,7 +204,10 @@ static const struct drm_ioctl_desc vc4_drm_ioctls[] = {
 };
 
 static struct drm_driver vc4_drm_driver = {
-	.driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_PRIME,
+	.driver_features = (DRIVER_MODESET |
+			    DRIVER_GEM |
+			    DRIVER_HAVE_IRQ |
+			    DRIVER_PRIME),
 	.load = vc4_drm_load,
 	.unload = vc4_drm_unload,
 	/*
@@ -202,6 +215,11 @@ static struct drm_driver vc4_drm_driver = {
 	.preclose = vc4_drm_preclose,
 	.lastclose = vc4_drm_lastclose,
 	*/
+
+	.irq_handler = vc4_irq,
+	.irq_preinstall = vc4_irq_preinstall,
+	.irq_postinstall = vc4_irq_postinstall,
+	.irq_uninstall = vc4_irq_uninstall,
 
 	/*
 	.get_vblank_counter = vc4_drm_get_vblank_counter,
