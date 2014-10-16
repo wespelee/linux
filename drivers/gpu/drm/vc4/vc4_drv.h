@@ -32,6 +32,13 @@ struct vc4_dev {
 	void __iomem *hvs_ctx;
 	uint32_t hvs_ctx_size;
 
+	/* List of struct vc4_list_bo_entry allocated to accomodate
+	 * binner overflow.  These will be freed when the exec is
+	 * done.
+	 */
+	struct list_head overflow_list;
+	struct work_struct overflow_mem_work;
+
 	volatile struct vc4_mode_set_cmd *mode_set_cmd;
 	dma_addr_t mode_set_cmd_addr;
 };
@@ -79,12 +86,6 @@ struct exec_info {
 	 * records, and uniforms.
 	 */
 	struct drm_gem_cma_object *exec_bo;
-
-	/* List of struct vc4_list_bo_entry allocated to accomodate
-	 * binner overflow.  These will be freed when the exec is
-	 * done.
-	 */
-	struct list_head overflow_list;
 
 	/**
 	 * This tracks the per-shader-record state (packet 64) that
@@ -183,6 +184,7 @@ struct vc4_validated_shader_info
 #define VC4_WRITE(offset, val) writel(val, to_vc4_dev(dev)->vc4_regs + offset)
 #define HVS_READ(offset) readl(to_vc4_dev(dev)->hvs_regs + offset)
 #define HVS_WRITE(offset, val) writel(val, to_vc4_dev(dev)->hvs_regs + offset)
+#define VC4_POSTING_READ(offset) (void)VC4_READ(offset)
 
 /**
  * _wait_for - magic (register) wait macro
@@ -225,6 +227,13 @@ int vc4_set_platform_qpu_enable(bool on);
 /* vc4_gem.c */
 int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 			struct drm_file *file_priv);
+
+/* vc4_irq.c */
+irqreturn_t vc4_irq(int irq, void *arg);
+void vc4_irq_preinstall(struct drm_device *dev);
+int vc4_irq_postinstall(struct drm_device *dev);
+void vc4_irq_uninstall(struct drm_device *dev);
+void vc4_irq_reset(struct drm_device *dev);
 
 /* vc4_validate.c */
 int
