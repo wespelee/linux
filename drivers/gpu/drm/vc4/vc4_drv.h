@@ -25,7 +25,7 @@
 #include "drm_gem_cma_helper.h"
 
 struct vc4_dev {
-	struct drm_device dev;
+	struct drm_device *dev;
 
 	void __iomem *vc4_regs;
 	void __iomem *hvs_regs;
@@ -39,7 +39,7 @@ struct vc4_dev {
 static inline struct vc4_dev *
 to_vc4_dev(struct drm_device *dev)
 {
-	return (struct vc4_dev *)dev;
+	return (struct vc4_dev *)dev->dev_private;
 }
 
 enum vc4_bo_mode {
