@@ -51,6 +51,9 @@ struct vc4_dev {
 	/* Protects bo_cache and the BO stats. */
 	spinlock_t bo_lock;
 
+	wait_queue_head_t frame_done_queue;
+	bool frame_done;
+
 	/* List of struct vc4_list_bo_entry allocated to accomodate
 	 * binner overflow.  These will be freed when the exec is
 	 * done.
