@@ -24,7 +24,10 @@
 #include "vc4_drv.h"
 #include "vc4_regs.h"
 
-#define VC4_DRIVER_IRQS V3D_INT_OUTOMEM
+#define VC4_DRIVER_IRQS (V3D_INT_OUTOMEM | \
+			 V3D_INT_FRDONE)
+
+DECLARE_WAIT_QUEUE_HEAD(render_wait);
 
 static void
 vc4_overflow_mem_work(struct work_struct *work)
@@ -70,6 +73,11 @@ vc4_irq(int irq, void *arg)
 		schedule_work(&vc4->overflow_mem_work);
 	}
 
+	if (intctl & V3D_INT_FRDONE) {
+		vc4->frame_done = true;
+		wake_up_all(&vc4->frame_done_queue);
+	}
+
 	return intctl ? IRQ_HANDLED : IRQ_NONE;
 }
 
@@ -78,6 +86,7 @@ vc4_irq_preinstall(struct drm_device *dev)
 {
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
 
+	init_waitqueue_head(&vc4->frame_done_queue);
 	INIT_WORK(&vc4->overflow_mem_work, vc4_overflow_mem_work);
 
 	/* Clear any pending interrupts someone might have left around
@@ -119,7 +128,12 @@ vc4_irq_uninstall(struct drm_device *dev)
 /** Reinitializes interrupt registers when a GPU reset is performed. */
 void vc4_irq_reset(struct drm_device *dev)
 {
+	struct vc4_dev *vc4 = to_vc4_dev(dev);
+
 	VC4_WRITE(V3D_INTCTL, VC4_DRIVER_IRQS);
 	VC4_WRITE(V3D_INTDIS, 0);
 	VC4_WRITE(V3D_INTENA, VC4_DRIVER_IRQS);
+
+	vc4->frame_done = true;
+	wake_up_all(&vc4->frame_done_queue);
 }
