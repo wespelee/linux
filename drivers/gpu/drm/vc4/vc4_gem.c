@@ -177,7 +177,6 @@ vc4_flush_caches(struct drm_device *dev)
 static int
 vc4_submit(struct drm_device *dev, struct exec_info *exec)
 {
-	uint32_t initial_bfc, initial_rfc;
 	uint32_t ct0ca = exec->ct0ca, ct0ea = exec->ct0ea;
 	uint32_t ct1ca = exec->ct1ca, ct1ea = exec->ct1ea;
 	int ret;
@@ -187,9 +186,6 @@ vc4_submit(struct drm_device *dev, struct exec_info *exec)
 	/* Disable the binner's pre-loaded overflow memory address */
 	VC4_WRITE(V3D_BPOA, 0);
 	VC4_WRITE(V3D_BPOS, 0);
-
-	initial_bfc = VC4_READ(V3D_BFC);
-	initial_rfc = VC4_READ(V3D_RFC);
 
 	submit_cl(dev, 0, ct0ca, ct0ea);
 
