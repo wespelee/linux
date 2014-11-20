@@ -123,8 +123,6 @@ vc4_drm_load(struct drm_device *dev, unsigned long flags)
 	if (!vc4)
 		return -ENOMEM;
 
-	INIT_LIST_HEAD(&vc4->overflow_list);
-
 	ret = dma_set_coherent_mask(dev->dev, DMA_BIT_MASK(32));
 	if (ret) {
 		kfree(vc4);
@@ -146,6 +144,8 @@ vc4_drm_load(struct drm_device *dev, unsigned long flags)
 			  VC4_READ(V3D_IDENT0), VC4_EXPECTED_IDENT0);
 		goto fail;
 	}
+
+	vc4_gem_init(dev);
 
 	ret = drm_irq_install(dev, platform_get_irq(dev->platformdev, 0));
 	if (ret) {
