@@ -44,6 +44,12 @@ struct vc4_dev {
 
 	volatile struct vc4_mode_set_cmd *mode_set_cmd;
 	dma_addr_t mode_set_cmd_addr;
+
+	struct {
+		uint32_t last_ct0ca, last_ct1ca;
+		struct timer_list timer;
+		struct work_struct reset_work;
+	} hangcheck;
 };
 
 static inline struct vc4_dev *
@@ -228,6 +234,7 @@ int vc4_modeset_init(struct drm_device *dev);
 int vc4_set_platform_qpu_enable(bool on);
 
 /* vc4_gem.c */
+void vc4_gem_init(struct drm_device *dev);
 int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 			struct drm_file *file_priv);
 
