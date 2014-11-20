@@ -179,8 +179,6 @@ static int vc4_drm_bind(struct device *dev)
 	}
 	of_node_put(firmware_node);
 
-	INIT_LIST_HEAD(&vc4->overflow_list);
-
 	drm = drm_dev_alloc(&vc4_drm_driver, dev);
 	if (!drm)
 		return -ENOMEM;
@@ -213,6 +211,8 @@ static int vc4_drm_bind(struct device *dev)
 		if (ret)
 			goto unregister;
 	}
+
+	vc4_gem_init(drm);
 
 	vc4_kms_load(drm);
 
