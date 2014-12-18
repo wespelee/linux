@@ -4,6 +4,7 @@ ccflags-y := -Iinclude/drm
 
 # core driver code
 vc4-y := \
+	vc4_bo.o \
 	vc4_drv.o \
 	vc4_display.o \
 	vc4_gem.o \

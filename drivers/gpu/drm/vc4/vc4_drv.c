@@ -234,7 +234,7 @@ static struct drm_driver vc4_drm_driver = {
 	.debugfs_cleanup = vc4_debugfs_cleanup,
 #endif
 
-	.gem_free_object = drm_gem_cma_free_object,
+	.gem_free_object = vc4_free_object,
 	.gem_vm_ops = &drm_gem_cma_vm_ops,
 
 	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
@@ -247,7 +247,7 @@ static struct drm_driver vc4_drm_driver = {
 	.gem_prime_vunmap	= drm_gem_cma_prime_vunmap,
 	.gem_prime_mmap		= drm_gem_cma_prime_mmap,
 
-	.dumb_create = drm_gem_cma_dumb_create,
+	.dumb_create = vc4_dumb_create,
 	.dumb_map_offset = drm_gem_dumb_map_offset,
 	.dumb_destroy = drm_gem_dumb_destroy,
 
