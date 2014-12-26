@@ -35,7 +35,6 @@ vc4_overflow_mem_work(struct work_struct *work)
 	struct vc4_dev *vc4 =
 		container_of(work, struct vc4_dev, overflow_mem_work);
 	struct drm_device *dev = vc4->dev;
-	struct drm_gem_cma_object *cma_obj;
 	struct vc4_bo *bo;
 
 	bo = vc4_bo_create(dev, 256 * 1024);
