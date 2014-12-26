@@ -44,6 +44,12 @@ static void vc4_bo_destroy(struct vc4_bo *bo)
 	struct drm_gem_object *obj = &bo->base.base;
 	struct vc4_dev *vc4 = to_vc4_dev(obj->dev);
 
+	if (bo->validated_shader) {
+		kfree(bo->validated_shader->texture_samples);
+		kfree(bo->validated_shader);
+		bo->validated_shader = NULL;
+	}
+
 	vc4->bo_stats.num_allocated--;
 	vc4->bo_stats.size_allocated -= obj->size;
 	drm_gem_cma_free_object(obj);
@@ -240,6 +246,12 @@ void vc4_free_object(struct drm_gem_object *gem_bo)
 		vc4_bo_destroy(bo);
 		spin_unlock(&vc4->bo_lock);
 		return;
+	}
+
+	if (bo->validated_shader) {
+		kfree(bo->validated_shader->texture_samples);
+		kfree(bo->validated_shader);
+		bo->validated_shader = NULL;
 	}
 
 	bo->free_time = jiffies;
