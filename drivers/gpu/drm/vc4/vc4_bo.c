@@ -15,6 +15,7 @@
  */
 
 #include "vc4_drv.h"
+#include "uapi/drm/vc4_drm.h"
 
 static void vc4_bo_stats_dump(struct vc4_dev *vc4)
 {
@@ -293,6 +294,48 @@ vc4_prime_export(struct drm_device *dev, struct drm_gem_object *obj, int flags)
 	}
 
 	return drm_gem_prime_export(dev, obj, flags);
+}
+
+int
+vc4_create_bo_ioctl(struct drm_device *dev, void *data,
+		    struct drm_file *file_priv)
+{
+	struct drm_vc4_create_bo *args = data;
+	struct vc4_bo *bo = NULL;
+	int ret;
+
+	args->size = roundup(args->size, PAGE_SIZE);
+	if (args->size == 0)
+		return -EINVAL;
+
+	bo = vc4_bo_create(dev, args->size);
+	if (!bo)
+		return -ENOMEM;
+
+	ret = drm_gem_handle_create(file_priv, &bo->base.base, &args->handle);
+	drm_gem_object_unreference_unlocked(&bo->base.base);
+
+	return ret;
+}
+
+int
+vc4_mmap_bo_ioctl(struct drm_device *dev, void *data,
+		  struct drm_file *file_priv)
+{
+	struct drm_vc4_mmap_bo *args = data;
+	struct drm_gem_object *gem_obj;
+
+	gem_obj = drm_gem_object_lookup(dev, file_priv, args->handle);
+	if (!gem_obj) {
+		DRM_ERROR("Failed to look up GEM BO %d\n", args->handle);
+		return -EINVAL;
+	}
+
+	/* The mmap offset was set up at BO allocation time. */
+	args->offset = drm_vma_node_offset_addr(&gem_obj->vma_node);
+
+	drm_gem_object_unreference(gem_obj);
+	return 0;
 }
 
 void vc4_bo_cache_init(struct drm_device *dev)
