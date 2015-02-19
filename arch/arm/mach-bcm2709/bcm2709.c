@@ -159,6 +159,11 @@ static struct map_desc bcm2709_io_desc[] __initdata = {
 	 .pfn = __phys_to_pfn(ARM_LOCAL_BASE),
 	 .length = SZ_4K,
 	 .type = MT_DEVICE},
+	{
+         .virtual = IO_ADDRESS(VC4_BASE),
+         .pfn = __phys_to_pfn(VC4_BASE),
+         .length = SZ_4K,
+         .type = MT_DEVICE}
 };
 
 void __init bcm2709_map_io(void)
@@ -646,6 +651,42 @@ static struct platform_device bcm2835_thermal_device = {
 	.name = "bcm2835_thermal",
 };
 
+
+#ifdef CONFIG_DRM_VC4
+static struct resource vc4_drm_resources[] = {
+	/* V3D registers */
+	{
+		.start = VC4_BASE,
+		.end = VC4_BASE + SZ_4K - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	/* HVS registers */
+	{
+		.start = BCM2708_PERI_BASE + 0x00400000,
+		.end = BCM2708_PERI_BASE + 0x00400000 + 2 * SZ_4K - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	/* HVS context memory */
+	{
+		.start = BCM2708_PERI_BASE + 0x00402000,
+		.end = BCM2708_PERI_BASE + 0x00402000 + 4 * SZ_4K - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.start = IRQ_3D,
+		.end = IRQ_3D,
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device vc4_drm_device = {
+	.name = "vc4-drm",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(vc4_drm_resources),
+	.resource = vc4_drm_resources,
+};
+#endif
+
 #if defined(CONFIG_SND_BCM2708_SOC_I2S) || defined(CONFIG_SND_BCM2708_SOC_I2S_MODULE)
 static struct resource bcm2708_i2s_resources[] = {
 	{
@@ -922,6 +963,10 @@ void __init bcm2709_init(void)
 
 #if defined(CONFIG_SND_BCM2708_SOC_I2S) || defined(CONFIG_SND_BCM2708_SOC_I2S_MODULE)
 	bcm_register_device_dt(&bcm2708_i2s_device);
+#endif
+
+#ifdef CONFIG_DRM_VC4
+	bcm_register_device(&vc4_drm_device);
 #endif
 
 #if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC_MODULE)
