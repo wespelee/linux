@@ -83,8 +83,8 @@ vc4_connector_best_encoder(struct drm_connector *connector)
 }
 
 static struct vc4_params params = {
-	.width = 1680,
-	.height = 1050
+	.width = 1920,
+	.height = 1080
 };
 
 static int
@@ -425,7 +425,7 @@ vc4_modeset_init(struct drm_device *dev)
 
 
 module_param_named(width, params.width, int, 0444);
-MODULE_PARM_DESC(width, "Display width (default 1680)");
+MODULE_PARM_DESC(width, "Display width (default 1920)");
 
 module_param_named(height, params.height, int, 0444);
-MODULE_PARM_DESC(height, "Display height (default 1050)");
+MODULE_PARM_DESC(height, "Display height (default 1080)");
