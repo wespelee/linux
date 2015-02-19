@@ -215,7 +215,7 @@ dump_hvs(struct drm_device *dev)
 	DRM_INFO("HVS ctx:\n");
 	for (i = 0; i < 64; i += 4) {
 		DRM_INFO("0x%08x (%s): 0x%08x 0x%08x 0x%08x 0x%08x\n",
-			 i * 4, i < 32 ? "B" : "D",
+			 i * 4, i < HVS_BOOTLOADER_DLIST_END ? "B" : "D",
 			 ((uint32_t *)vc4->hvs_ctx)[i + 0],
 			 ((uint32_t *)vc4->hvs_ctx)[i + 1],
 			 ((uint32_t *)vc4->hvs_ctx)[i + 2],
