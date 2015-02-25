@@ -1,3 +1,4 @@
+#include <dt-bindings/arm/raspberrypi-firmware-power.h>
 #include "bcm2835.dtsi"
 
 / {
@@ -12,6 +13,14 @@
 			label = "ACT";
 			default-state = "keep";
 			linux,default-trigger = "heartbeat";
+		};
+	};
+
+	soc {
+		firmware: firmware {
+			compatible = "raspberrypi,firmware";
+			mboxes = <&mailbox>;
+			#power-domain-cells = <1>;
 		};
 	};
 };
@@ -48,4 +57,8 @@
 &sdhci {
 	status = "okay";
 	bus-width = <4>;
+};
+
+&usb {
+	power-domains = <&firmware POWER_DOMAIN_USB>;
 };
