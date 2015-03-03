@@ -39,6 +39,24 @@
 #include "vc4_display.h"
 #include "vc4_regs.h"
 
+static void
+vc4_display_fixup_elapsed(unsigned long data)
+{
+	struct drm_device *dev = (struct drm_device *)data;
+	struct vc4_dev *vc4 = to_vc4_dev(dev);
+
+	uint32_t dlist1 = HVS_READ(SCALER_DISPLIST1);
+	if (dlist1 != HVS_BOOTLOADER_DLIST_END) {
+		DRM_INFO("Somebody smashed dlist1 to 0x%08x, resetting...\n",
+			 dlist1);
+		HVS_WRITE(SCALER_DISPLIST1, HVS_BOOTLOADER_DLIST_END);
+		wmb();
+	}
+
+	mod_timer(&vc4->display_fixup_timer,
+		  round_jiffies_up(jiffies + msecs_to_jiffies(1000)));
+}
+
 struct vc4_mode_set_cmd {
 	u32 xres, yres, xres_virtual, yres_virtual;
 	u32 pitch; /* in bytes */
@@ -271,6 +289,9 @@ vc4_crtc_mode_set(struct drm_crtc *crtc,
 	dump_hvs(dev);
 #endif
 
+	mod_timer(&vc4->display_fixup_timer,
+		  round_jiffies_up(jiffies + msecs_to_jiffies(1000)));
+
 	return 0;
 }
 
@@ -358,6 +379,10 @@ vc4_modeset_init(struct drm_device *dev)
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
 	struct drm_encoder *encoder;
 	struct drm_connector *connector;
+
+	setup_timer(&vc4->display_fixup_timer,
+		    vc4_display_fixup_elapsed,
+		    (unsigned long) dev);
 
 	vc4->mode_set_cmd =
 		dma_alloc_coherent(NULL,

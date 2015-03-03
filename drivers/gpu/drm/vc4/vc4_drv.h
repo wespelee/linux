@@ -66,6 +66,8 @@ struct vc4_dev {
 	volatile struct vc4_mode_set_cmd *mode_set_cmd;
 	dma_addr_t mode_set_cmd_addr;
 
+	struct timer_list display_fixup_timer;
+
 	/* The kernel-space BO cache.  Tracks buffers that have been
 	 * unreferenced by all other users (refcounts of 0!) but not
 	 * yet freed, so we can do cheap allocations.
