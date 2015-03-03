@@ -232,35 +232,13 @@ vc4_crtc_mode_set(struct drm_crtc *crtc,
 {
 	struct drm_device *dev = crtc->dev;
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
-	volatile struct vc4_mode_set_cmd *set = vc4->mode_set_cmd;
 	struct drm_framebuffer *fb = crtc->primary->fb;
 	struct drm_gem_cma_object *bo = drm_fb_cma_get_gem_obj(fb, 0);
-	uint32_t val;
 	uint32_t *dlist = (uint32_t *)vc4->hvs_ctx + HVS_BOOTLOADER_DLIST_END;
 	uint32_t dlist_count = 0;
 
-	set->xres = mode->hdisplay;
-	set->yres = mode->vdisplay;
-	set->xres_virtual = mode->hdisplay;
-	set->yres_virtual = mode->vdisplay;
-	set->bpp = fb->bits_per_pixel;
-	set->xoffset = 0;
-	set->yoffset = 0;
-	set->base = 0;
-	set->pitch = crtc->primary->fb->pitches[0];
-
 #if 0
 	DRM_INFO("HVS regs before:\n");
-	dump_hvs(dev);
-#endif
-
-	wmb();
-	bcm_mailbox_write(MBOX_CHAN_FB, vc4->mode_set_cmd_addr);
-	bcm_mailbox_read(MBOX_CHAN_FB, &val);
-	rmb();
-
-#if 0
-	DRM_INFO("HVS regs after modeset:\n");
 	dump_hvs(dev);
 #endif
 
