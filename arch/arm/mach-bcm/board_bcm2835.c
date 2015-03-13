@@ -37,6 +37,7 @@ static void __init bcm2835_init(void)
 
 static const char * const bcm2835_compat[] = {
 	"brcm,bcm2835",
+	"brcm,bcm2836",
 	NULL
 };
 
