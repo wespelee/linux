@@ -179,6 +179,7 @@
 			reg = <0x7e902000 0x600>;
 			interrupts = <2 8>, <2 9>;
 			ddc = <&i2c2>;
+			hpd-gpio = <&gpio 46 0>;
 			crtc = <&pv2>;
 		};
 
