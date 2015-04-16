@@ -1,0 +1,30 @@
+/dts-v1/;
+#include "bcm2835-rpi.dtsi"
+
+/ {
+	compatible = "raspberrypi,2-model-b", "brcm,bcm2836";
+	model = "Raspberry Pi 2 Model B";
+
+	memory {
+		reg = <0 0x40000000>;
+	};
+
+	soc {
+		ranges = <0x7e000000 0x3f000000 0x1000000>;
+		dma-ranges = <0xc0000000 0x00000000 0x3f000000>;
+
+		/delete-node/ arm-pmu;
+	};
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		v7_cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0xf00>;
+			clock-frequency = <800000000>;
+		};
+	};
+};
