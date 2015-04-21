@@ -1,0 +1,10 @@
+Broadcom BCM2836 device tree bindings
+-------------------------------------------
+
+Raspberry Pi 2 Model B
+Required root node properties:
+compatible = "raspberrypi,2-model-b", "brcm,bcm2836";
+
+Generic BCM2836 board
+Required root node properties:
+compatible = "brcm,bcm2836";
