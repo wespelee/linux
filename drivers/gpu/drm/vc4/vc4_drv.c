@@ -200,6 +200,8 @@ static int vc4_drm_bind(struct device *dev)
 	if (ret)
 		goto unref;
 
+	vc4_gem_init(drm);
+
 	ret = component_bind_all(dev, drm);
 	if (ret)
 		goto unref;
@@ -217,8 +219,6 @@ static int vc4_drm_bind(struct device *dev)
 		if (ret)
 			goto unregister;
 	}
-
-	vc4_gem_init(drm);
 
 	vc4_kms_load(drm);
 
