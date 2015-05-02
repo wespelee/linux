@@ -21,6 +21,10 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 
+#ifdef CONFIG_SMP
+#include "bcm2836_platsmp.h"
+#endif
+
 static void __init bcm2835_init(void)
 {
 	int ret;
@@ -37,6 +41,10 @@ static void __init bcm2835_init(void)
 
 static const char * const bcm2835_compat[] = {
 	"brcm,bcm2835",
+	NULL
+};
+
+static const char * const bcm2836_compat[] = {
 	"brcm,bcm2836",
 	NULL
 };
@@ -44,4 +52,12 @@ static const char * const bcm2835_compat[] = {
 DT_MACHINE_START(BCM2835, "BCM2835")
 	.init_machine = bcm2835_init,
 	.dt_compat = bcm2835_compat
+MACHINE_END
+
+DT_MACHINE_START(BCM2836, "BCM2836")
+#ifdef CONFIG_SMP
+	.smp = smp_ops(bcm2836_smp_ops),
+#endif
+	.init_machine = bcm2835_init,
+	.dt_compat = bcm2836_compat
 MACHINE_END
