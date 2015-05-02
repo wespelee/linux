@@ -14,6 +14,20 @@
 			 <0x40000000 0x40000000 0x00001000>;
 		dma-ranges = <0xc0000000 0x00000000 0x3f000000>;
 
+		localctrl@40000000 {
+			/* local mailbox registers, used by both SMP
+			 * init code, and irqchip driver for IPI.
+			 * One doubled iomap will probably exist on
+			 * pagetable (unless a static map is there
+			 * and of_iomap checks for it)..
+			 * This is not particularly pretty, but the
+			 * ARM core should be OK with this as long as
+			 * the two mappings have the same attributes.
+			 */
+			compatible = "brcm,bcm2836-local-mbox";
+			reg = <0x40000000 0x100>;
+		};
+
 		/delete-node/ arm-pmu;
 	};
 
@@ -30,6 +44,27 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a7";
 			reg = <0xf00>;
+			clock-frequency = <800000000>;
+		};
+
+		v7_cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0xf01>;
+			clock-frequency = <800000000>;
+		};
+
+		v7_cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0xf02>;
+			clock-frequency = <800000000>;
+		};
+
+		v7_cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0xf03>;
 			clock-frequency = <800000000>;
 		};
 	};
