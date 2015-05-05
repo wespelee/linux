@@ -56,7 +56,7 @@
 #include "irqchip.h"
 
 /* Put the bank and irq (32 bits) into the hwirq */
-#define MAKE_HWIRQ(b, n)	((b << 5) | (n))
+#define MAKE_HWIRQ(b, n)	(((b) << 5) | (n))
 #define HWIRQ_BANK(i)		(i >> 5)
 #define HWIRQ_BIT(i)		BIT(i & 0x1f)
 
