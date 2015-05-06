@@ -1,0 +1,15 @@
+* Device tree bindings for ARM local registers on BCM2836.
+
+The ARM local registers control per-cpu IRQ masking, IPIs, and the
+system timer clock on BCM2836.
+
+Required properties:
+- compatible:		"brcm,bcm2836-arm-local", "syscon"
+- reg:			contains offset/length value of the MMIO region
+
+Example:
+
+syscon@40000000 {
+       compatible = "brcm,bcm2836-arm-local", "syscon";
+       reg = <0x40000000 0x100>;
+};
