@@ -27,15 +27,6 @@
 
 static void __iomem *local_mbox;
 
-void __init bcm2836_smp_init_cpus(void)
-{
-	int i;
-
-	/* todo read from DT and/or SCU */
-	for (i = 0; i < 4; i++)
-		set_cpu_possible(i, true);
-}
-
 void __init bcm2836_smp_prepare_cpus(unsigned int max_cpus)
 {
 	struct device_node *node;
@@ -78,7 +69,6 @@ int __init bcm2836_smp_boot_secondary(unsigned int cpu, struct task_struct *idle
 }
 
 struct smp_operations bcm2836_smp_ops __initdata = {
-	.smp_init_cpus		= bcm2836_smp_init_cpus,
 	.smp_prepare_cpus	= bcm2836_smp_prepare_cpus,
 	.smp_boot_secondary	= bcm2836_smp_boot_secondary,
 };
