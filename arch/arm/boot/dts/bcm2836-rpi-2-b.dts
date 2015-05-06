@@ -22,6 +22,20 @@
 	       reg = <0x40000000 0x100>;
 	};
 
+	timer {
+		compatible = "arm,armv7-timer";
+		clock-frequency = <19200000>;
+		interrupts = <3 0>, // PHYS_SECURE_PPI
+			     <3 1>, // PHYS_NONSECURE_PPI
+			     <3 3>, // VIRT_PPI
+			     <3 2>; // HYP_PPI
+		always-on;
+
+		clock {
+			compatible = "brcm,bcm2836-local-timer-clk";
+		};
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
