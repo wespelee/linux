@@ -20,7 +20,37 @@
 #include <linux/clk-provider.h>
 #include <linux/clkdev.h>
 #include <linux/clk/bcm2835.h>
+#include <linux/mfd/syscon.h>
 #include <linux/of.h>
+#include <linux/regmap.h>
+
+#define LOCAL_CONTROL			0x000
+#define LOCAL_PRESCALER			0x008
+
+static void __init bcm2836_local_timer_clk_init(struct device_node *np)
+{
+	/* If the 2836's ARM local node is present, then use it to
+	 * configure the local timer's clock.
+	 */
+	struct regmap *local_regmap =
+		syscon_regmap_lookup_by_compatible("brcm,bcm2836-arm-local");
+
+	if (IS_ERR(local_regmap))
+		return;
+
+	/*
+	 * Set the timer to source from the 1.92Mhz crystal clock (bit
+	 * 8 unset), and only increment by 1 instead of 2 (bit 9
+	 * unset).
+	 */
+	regmap_write(local_regmap, LOCAL_CONTROL, 0);
+
+	/*
+	 * Set the timer prescaler to 1:1 (timer freq = input freq *
+	 * 2**31 / prescaler)
+	 */
+	regmap_write(local_regmap, LOCAL_PRESCALER, 0x80000000);
+}
 
 /*
  * These are fixed clocks. They're probably not all root clocks and it may
@@ -58,3 +88,6 @@ void __init bcm2835_init_clocks(void)
 	if (ret)
 		pr_err("uart1_pclk alias not registered\n");
 }
+
+CLK_OF_DECLARE(bcm2836_local_timer_clk, "brcm,bcm2836-local-timer-clk",
+	       bcm2836_local_timer_clk_init);
