@@ -14,15 +14,55 @@
 
 #include <linux/init.h>
 #include <linux/irqchip.h>
+#include <linux/mfd/syscon.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
+#include <linux/regmap.h>
 #include <linux/clk/bcm2835.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 
+#define ARM_LOCAL_MAILBOX3_SET0 0x8c
+#define ARM_LOCAL_MAILBOX3_CLR0 0xcc
+
 #ifdef CONFIG_SMP
-#include "bcm2836_platsmp.h"
+int __init bcm2836_smp_boot_secondary(unsigned int cpu, struct task_struct *idle)
+{
+	int timeout = 20;
+	unsigned long secondary_startup_phys =
+		(unsigned long) virt_to_phys((void *)secondary_startup);
+	struct regmap *regmap =
+		syscon_regmap_lookup_by_compatible("brcm,bcm2836-arm-local");
+
+	if (IS_ERR(regmap)) {
+		pr_err("Faild to get local register map for SMP\n");
+		return -ENOSYS;
+	}
+
+	dsb();
+	regmap_write(regmap, ARM_LOCAL_MAILBOX3_SET0 + 16 * cpu,
+		     secondary_startup_phys);
+
+	while (true) {
+		int val;
+		int ret = regmap_read(regmap,
+				      ARM_LOCAL_MAILBOX3_CLR0 + 16 * cpu, &val);
+		if (ret)
+			return ret;
+		if (val == 0)
+			return 0;
+		if (timeout-- == 0)
+			return -ETIMEDOUT;
+		cpu_relax();
+	}
+
+	return 0;
+}
+
+struct smp_operations bcm2836_smp_ops __initdata = {
+	.smp_boot_secondary	= bcm2836_smp_boot_secondary,
+};
 #endif
 
 static void __init bcm2835_init(void)
