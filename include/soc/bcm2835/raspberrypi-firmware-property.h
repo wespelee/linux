@@ -108,4 +108,6 @@ enum raspberrypi_firmware_property_tag {
 };
 
 int raspberrypi_firmware_property(struct device_node *of_node,
-				  void *data, size_t tag_size);
+				  u32 tag, void *data, size_t len);
+int raspberrypi_firmware_property_list(struct device_node *of_node,
+				       void *data, size_t tag_size);
