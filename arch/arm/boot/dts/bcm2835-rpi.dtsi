@@ -62,6 +62,7 @@
 &sdhci {
 	status = "okay";
 	bus-width = <4>;
+	clocks = <&firmware_clocks RPI_CLOCK_EMMC>;
 };
 
 &uart0 {
