@@ -73,6 +73,7 @@ static int rpi_clk_is_on(struct clk_hw *hw)
 		dev_err(rpi_clk->dev, "Failed to get clock state\n");
 		return ret ? ret : -EINVAL;
 	}
+	dev_err(rpi_clk->dev, "%s: %s\n", rpi_clk->name, packet[1] ? "on" : "off");
 
 	return packet[1] & RPI_FIRMWARE_CLOCK_STATE_ENABLED;
 }
@@ -83,6 +84,9 @@ static int rpi_clk_set_state(struct clk_hw *hw, bool on)
 		container_of(hw, struct rpi_firmware_clock, hw);
 	u32 packet[2];
 	int ret;
+
+	dev_err(rpi_clk->dev, "Setting %s %s\n", rpi_clk->name,
+		on ? "on" : "off");
 
 	packet[0] = rpi_clock_id(rpi_clk);
 	packet[1] = on;
@@ -96,6 +100,8 @@ static int rpi_clk_set_state(struct clk_hw *hw, bool on)
 		dev_err(rpi_clk->dev, "Failed to set clock state\n");
 		return ret ? ret : -EINVAL;
 	}
+	dev_err(rpi_clk->dev, "Checking...\n");
+	rpi_clk_is_on(&rpi_clk->hw);
 
 	return 0;
 }
@@ -132,6 +138,8 @@ static unsigned long rpi_clk_get_rate(struct clk_hw *hw,
 		return 0;
 	}
 
+	dev_err(rpi_clk->dev, "%s rate: %d\n", rpi_clk->name, packet[1]);
+
 	return packet[1];
 }
 
@@ -155,6 +163,13 @@ static int rpi_clk_set_rate(struct clk_hw *hw,
 		dev_err(rpi_clk->dev, "Failed to set clock rate\n");
 		return ret;
 	}
+
+	/*
+	 * The firmware will have adjusted our requested rate and
+	 * returned it in packet[1].  The clk core code will call
+	 * rpi_clk_get_rate() to get the adjusted rate.
+	 */
+	dev_err(rpi_clk->dev, "Set %s clock rate to %d\n", rpi_clk->name, packet[1]);
 
 	return 0;
 }
