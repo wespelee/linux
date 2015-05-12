@@ -1,3 +1,4 @@
+#include <dt-bindings/clk/raspberrypi.h>
 #include "bcm2835.dtsi"
 
 / {
@@ -19,6 +20,12 @@
 		firmware: firmware {
 			compatible = "raspberrypi,bcm2835-firmware";
 			mboxes = <&mailbox>;
+		};
+
+		firmware_clocks: firmware-clocks {
+			compatible = "raspberrypi,bcm2835-firmware-clocks";
+			#clock-cells = <1>;
+			raspberrypi,firmware = <&firmware>;
 		};
 	};
 };
@@ -55,4 +62,15 @@
 &sdhci {
 	status = "okay";
 	bus-width = <4>;
+	clocks = <&firmware_clocks RPI_CLOCK_EMMC>;
+};
+
+&uart0 {
+	clocks = <&firmware_clocks RPI_CLOCK_UART0>,
+		 <&firmware_clocks RPI_CLOCK_CORE>;
+	clock-names = "uartclk", "apb_pclk";
+};
+
+&spi {
+	clocks = <&firmware_clocks RPI_CLOCK_CORE>;
 };
