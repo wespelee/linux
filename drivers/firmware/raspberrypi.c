@@ -15,6 +15,7 @@
 #include <linux/mailbox_client.h>
 #include <linux/module.h>
 #include <linux/of_platform.h>
+#include <linux/platform_data/mailbox-bcm2708.h>
 #include <linux/platform_device.h>
 #include <soc/bcm2835/raspberrypi-firmware-property.h>
 
@@ -39,32 +40,6 @@ static void response_callback(struct mbox_client *cl, void *msg)
 }
 
 /*
- * Sends a request to the firmware through the BCM2835 mailbox driver,
- * and synchronously waits for the reply.
- */
-static int
-rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data)
-{
-	u32 message = MBOX_MSG(chan, data);
-	int ret;
-
-	WARN_ON(data & 0xf);
-
-	mutex_lock(&transaction_lock);
-	reinit_completion(&fw->c);
-	ret = mbox_send_message(fw->chan, &message);
-	if (ret >= 0) {
-		wait_for_completion(&fw->c);
-		ret = 0;
-	} else {
-		dev_err(fw->cl.dev, "mbox_send_message returned %d\n", ret);
-	}
-	mutex_unlock(&transaction_lock);
-
-	return ret;
-}
-
-/*
  * Submits a set of concatenated tags to the VPU firmware through the
  * mailbox property interface.
  *
@@ -77,6 +52,7 @@ int rpi_firmware_property_list(struct device_node *of_node,
 			       void *data, size_t tag_size)
 {
 	struct platform_device *pdev = of_find_device_by_node(of_node);
+	struct device *dev = &pdev->dev;
 	struct rpi_firmware *fw = platform_get_drvdata(pdev);
 	size_t size = tag_size + 12;
 	u32 *buf;
@@ -90,7 +66,7 @@ int rpi_firmware_property_list(struct device_node *of_node,
 	if (size & 3)
 		return -EINVAL;
 
-	buf = dma_alloc_coherent(fw->cl.dev, PAGE_ALIGN(size), &bus_addr,
+	buf = dma_alloc_coherent(dev, PAGE_ALIGN(size), &bus_addr,
 				 GFP_ATOMIC);
 	if (!buf)
 		return -ENOMEM;
@@ -104,8 +80,11 @@ int rpi_firmware_property_list(struct device_node *of_node,
 	buf[size / 4 - 1] = RPI_FIRMWARE_PROPERTY_END;
 	wmb();
 
-	ret = rpi_firmware_transaction(fw, MBOX_CHAN_PROPERTY, bus_addr);
-
+	ret = bcm_mailbox_write(MBOX_CHAN_PROPERTY, bus_addr);
+	if (!ret) {
+		u32 success;
+		ret = bcm_mailbox_read(MBOX_CHAN_PROPERTY, &success);
+	}
 	rmb();
 	memcpy(data, &buf[2], tag_size);
 	if (ret == 0 && buf[1] != RPI_FIRMWARE_STATUS_SUCCESS) {
@@ -114,7 +93,7 @@ int rpi_firmware_property_list(struct device_node *of_node,
 		 * error, if there were multiple tags in the request.
 		 * But single-tag is the most common, so go with it.
 		 */
-		dev_err(fw->cl.dev, "Request 0x%08x returned status 0x%08x\n",
+		dev_err(dev, "Request 0x%08x returned status 0x%08x\n",
 			buf[2], buf[1]);
 		ret = -EINVAL;
 	}
