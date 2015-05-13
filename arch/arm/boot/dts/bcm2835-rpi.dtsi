@@ -69,3 +69,7 @@
 		 <&firmware_clocks RPI_CLOCK_CORE>;
 	clock-names = "uartclk", "apb_pclk";
 };
+
+&spi {
+	clocks = <&firmware_clocks RPI_CLOCK_CORE>;
+};
