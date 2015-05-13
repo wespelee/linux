@@ -1,3 +1,4 @@
+#include <dt-bindings/clk/raspberrypi.h>
 #include "bcm2835.dtsi"
 
 / {
@@ -61,4 +62,10 @@
 &sdhci {
 	status = "okay";
 	bus-width = <4>;
+};
+
+&uart0 {
+	clocks = <&firmware_clocks RPI_CLOCK_UART0>,
+		 <&firmware_clocks RPI_CLOCK_CORE>;
+	clock-names = "uartclk", "apb_pclk";
 };
