@@ -15,12 +15,21 @@
 #include "drm_atomic_helper.h"
 #include "drm_fb_cma_helper.h"
 #include "drm_plane_helper.h"
+#include <linux/platform_data/mailbox-bcm2708.h>
+#include <soc/bcm2835/raspberrypi-firmware-property.h>
+
+/* Firmware's structure for making an FB mbox call. */
+struct fbinfo_s {
+	u32 xres, yres, xres_virtual, yres_virtual;
+	u32 pitch, bpp;
+	u32 xoffset, yoffset;
+	u32 base;
+	u32 screen_size;
+	u16 cmap[256];
+};
 
 struct vc4_plane_state {
 	struct drm_plane_state base;
-	u32 *dlist;
-	u32 dlist_size; /* Number of dwords in allocated for the display list */
-	u32 dlist_count; /* Number of used dwords in the display list. */
 };
 
 static inline struct vc4_plane_state *
@@ -76,17 +85,6 @@ struct drm_plane_state *vc4_plane_duplicate_state(struct drm_plane *plane)
 
 	__drm_atomic_helper_plane_duplicate_state(plane, &vc4_state->base);
 
-	if (vc4_state->dlist) {
-		vc4_state->dlist = kmemdup(vc4_state->dlist,
-					   vc4_state->dlist_count * 4,
-					   GFP_KERNEL);
-		if (!vc4_state->dlist) {
-			kfree(vc4_state);
-			return NULL;
-		}
-		vc4_state->dlist_size = vc4_state->dlist_count;
-	}
-
 	return &vc4_state->base;
 }
 
@@ -95,7 +93,6 @@ void vc4_plane_destroy_state(struct drm_plane *plane,
 {
 	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
 
-	kfree(vc4_state->dlist);
 	__drm_atomic_helper_plane_destroy_state(plane, &vc4_state->base);
 	kfree(state);
 }
@@ -115,81 +112,6 @@ void vc4_plane_reset(struct drm_plane *plane)
 	vc4_state->base.plane = plane;
 }
 
-static void vc4_dlist_write(struct vc4_plane_state *vc4_state, u32 val)
-{
-	if (vc4_state->dlist_count == vc4_state->dlist_size) {
-		u32 new_size = max(4u, vc4_state->dlist_count * 2);
-		u32 *new_dlist = kmalloc(new_size * 4, GFP_KERNEL);
-		if (!new_dlist)
-			return;
-		memcpy(new_dlist, vc4_state->dlist, vc4_state->dlist_count * 4);
-
-		kfree(vc4_state->dlist);
-		vc4_state->dlist = new_dlist;
-		vc4_state->dlist_size = new_size;
-	}
-
-	vc4_state->dlist[vc4_state->dlist_count++] = val;
-}
-
-/*
- * Writes out a full display list for an active plane to the plane's
- * private dlist state.
- */
-static int
-vc4_plane_mode_set(struct drm_plane *plane, struct drm_plane_state *state)
-{
-	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
-	struct drm_framebuffer *fb = state->fb;
-	struct drm_gem_cma_object *bo = drm_fb_cma_get_gem_obj(fb, 0);
-	u32 ctl0_offset = vc4_state->dlist_count;
-	const struct hvs_format *format = vc4_get_hvs_format(fb->pixel_format);
-
-	vc4_dlist_write(vc4_state,
-			SCALER_CTL0_VALID |
-			(format->pixel_order << SCALER_CTL0_ORDER_SHIFT) |
-			(format->hvs << SCALER_CTL0_PIXEL_FORMAT_SHIFT) |
-			SCALER_CTL0_UNITY);
-
-	/* Position Word 0: Image Positions and Alpha Value */
-	vc4_dlist_write(vc4_state,
-			VC4_SET_FIELD(0xff, SCALER_POS0_FIXED_ALPHA) |
-			VC4_SET_FIELD(state->crtc_x, SCALER_POS0_START_X) |
-			VC4_SET_FIELD(state->crtc_y, SCALER_POS0_START_Y));
-
-	/*
-	 * Position Word 1: Scaled Image Dimensions.
-	 * Skipped due to SCALER_CTL0_UNITY scaling.
-	 */
-
-	/* Position Word 2: Source Image Size, Alpha Mode */
-	vc4_dlist_write(vc4_state,
-			VC4_SET_FIELD(format->has_alpha ?
-				      SCALER_POS2_ALPHA_MODE_PIPELINE :
-				      SCALER_POS2_ALPHA_MODE_FIXED,
-				      SCALER_POS2_ALPHA_MODE) |
-			VC4_SET_FIELD(state->crtc_w, SCALER_POS2_WIDTH) |
-			VC4_SET_FIELD(state->crtc_h, SCALER_POS2_HEIGHT));
-
-	/* Position Word 3: Context.  Written by the HVS. */
-	vc4_dlist_write(vc4_state, 0xc0c0c0c0);
-
-	/* Pointer Word 0: RGB / Y Pointer */
-	vc4_dlist_write(vc4_state, bo->paddr + fb->offsets[0]);
-
-	/* Pointer Context Word 0: Written by the HVS */
-	vc4_dlist_write(vc4_state, 0xc0c0c0c0);
-
-	/* Pitch word 0: Pointer 0 Pitch */
-	vc4_dlist_write(vc4_state,
-			VC4_SET_FIELD(fb->pitches[0], SCALER_SRC_PITCH));
-
-	vc4_state->dlist[ctl0_offset] |=
-		VC4_SET_FIELD(vc4_state->dlist_count, SCALER_CTL0_SIZE);
-
-	return 0;
-}
-
 /*
  * If a modeset involves changing the setup of a plane, the atomic
  * infrastructure will call this to validate a proposed plane setup.
@@ -201,44 +123,162 @@ vc4_plane_mode_set(struct drm_plane *plane, struct drm_plane_state *state)
 static int vc4_plane_atomic_check(struct drm_plane *plane,
 				  struct drm_plane_state *state)
 {
-	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
+	return 0;
+}
 
-	vc4_state->dlist_count = 0;
+/* Turns the display on/off. */
+static int
+vc4_plane_set_primary_blank(struct drm_plane *plane, bool blank)
+{
+	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
+	u32 packet = blank;
+	return rpi_firmware_property(vc4->firmware_node,
+				     RPI_FIRMWARE_FRAMEBUFFER_BLANK,
+				     &packet, sizeof(packet));
+}
 
-	if (plane_enabled(state)) {
-		return vc4_plane_mode_set(plane, state);
-	} else {
-		return 0;
+/*
+ * Submits the current vc4_plane->fbinfo setup to the VPU firmware to
+ * set up the primary plane.
+ */
+static int
+vc4_mbox_submit_fb(struct drm_plane *plane)
+{
+	struct vc4_plane *vc4_plane = to_vc4_plane(plane);
+	int ret;
+	u32 val;
+
+	wmb();
+
+	ret = bcm_mailbox_write(MBOX_CHAN_FB, vc4_plane->fbinfo_bus_addr);
+	if (ret) {
+		DRM_ERROR("MBOX_CHAN_FB write failed: %d\n", ret);
+		return ret;
 	}
+
+	ret = bcm_mailbox_read(MBOX_CHAN_FB, &val);
+	if (ret) {
+		DRM_ERROR("MBOX_CHAN_FB read failed: %d\n", ret);
+		return ret;
+	}
+
+	rmb();
+
+	return 0;
+}
+
+static void vc4_plane_atomic_update_primary(struct drm_plane *plane,
+					    struct drm_plane_state *old_state)
+{
+	struct vc4_plane *vc4_plane = to_vc4_plane(plane);
+	struct drm_plane_state *state = plane->state;
+	struct drm_framebuffer *fb = state->fb;
+	struct drm_gem_cma_object *bo = drm_fb_cma_get_gem_obj(fb, 0);
+	volatile struct fbinfo_s *fbinfo = vc4_plane->fbinfo;
+	u32 bpp = 32;
+	int ret;
+
+	vc4_plane_set_primary_blank(plane, false);
+
+	fbinfo->xres = state->crtc_w;
+	fbinfo->yres = state->crtc_h;
+	fbinfo->xres_virtual = state->crtc_w;
+	fbinfo->yres_virtual = state->crtc_h;
+	fbinfo->bpp = bpp;
+	fbinfo->xoffset = state->crtc_x;
+	fbinfo->yoffset = state->crtc_y;
+	fbinfo->base = bo->paddr + fb->offsets[0];
+	fbinfo->pitch = fb->pitches[0];
+
+	/* A bug in the firmware makes it so that if the fb->base is
+	 * set to nonzero, the configured pitch gets overwritten with
+	 * the previous pitch.  So, to get the configured pitch
+	 * recomputed, we have to make it allocate itself a new buffer
+	 * in VC memory, first.
+	 */
+	if (vc4_plane->pitch != fb->pitches[0]) {
+		u32 saved_base = fbinfo->base;
+		fbinfo->base = 0;
+		ret = vc4_mbox_submit_fb(plane);
+		fbinfo->base = saved_base;
+
+		vc4_plane->pitch = fbinfo->pitch;
+		WARN_ON_ONCE(vc4_plane->pitch != fb->pitches[0]);
+	}
+
+	vc4_mbox_submit_fb(plane);
+	WARN_ON_ONCE(fbinfo->pitch != fb->pitches[0]);
+	WARN_ON_ONCE(fbinfo->base != bo->paddr + fb->offsets[0]);
+}
+
+static void vc4_plane_atomic_disable(struct drm_plane *plane,
+				     struct drm_plane_state *old_state)
+{
+	vc4_plane_set_primary_blank(plane, true);
+}
+
+static void vc4_plane_atomic_update_cursor(struct drm_plane *plane,
+					   struct drm_plane_state *old_state)
+{
+	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
+	struct drm_plane_state *state = plane->state;
+	struct drm_framebuffer *fb = state->fb;
+	struct drm_gem_cma_object *bo = drm_fb_cma_get_gem_obj(fb, 0);
+	int ret;
+	u32 packet_state[] = { true, state->crtc_x, state->crtc_y, 0 };
+	u32 packet_info[] = { state->crtc_w, state->crtc_h,
+			      0, /* unused */
+			      bo->paddr + fb->offsets[0],
+			      0, 0, /* hotx, hoty */};
+	WARN_ON_ONCE(fb->pitches[0] != state->crtc_w * 4);
+	WARN_ON_ONCE(fb->bits_per_pixel != 32);
+
+	ret = rpi_firmware_property(vc4->firmware_node,
+				    RPI_FIRMWARE_SET_CURSOR_STATE,
+				    &packet_state,
+				    sizeof(packet_state));
+	if (ret || packet_state[0] != 0)
+		DRM_ERROR("Failed to set cursor state: 0x%08x\n", packet_state[0]);
+
+	ret = rpi_firmware_property(vc4->firmware_node,
+				    RPI_FIRMWARE_SET_CURSOR_INFO,
+				    &packet_info,
+				    sizeof(packet_info));
+	if (ret || packet_info[0] != 0)
+		DRM_ERROR("Failed to set cursor info: 0x%08x\n", packet_info[0]);
+}
+
+static void vc4_plane_cursor_disable(struct drm_plane *plane,
+				     struct drm_plane_state *old_state)
+{
+#if 0
+	/* This seems to break something in the FW -- we end up
+	 * failing at CMA allocation.
+	 */
+	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
+	u32 packet[] = { false, 0, 0, 0 };
+	int ret = rpi_firmware_property(vc4->firmware_node,
+					RPI_FIRMWARE_SET_CURSOR_STATE,
+					&packet, sizeof(packet));
+	if (ret)
+		DRM_ERROR("Failed to disable cursor: 0x%08x\n", packet[0]);
+#endif
 }
 
 static void vc4_plane_atomic_update(struct drm_plane *plane,
 				    struct drm_plane_state *old_state)
 {
-	/* No contents here.  Since we don't know where in the CRTC's
-	 * dlist we should be stored, our dlist is uploaded to the
-	 * hardware with vc4_plane_write_dlist() at CRTC atomic_flush
-	 * time.
-	 */
-}
-
-u32 vc4_plane_write_dlist(struct drm_plane *plane, u32 __iomem *dlist)
-{
-	struct vc4_plane_state *vc4_state = to_vc4_plane_state(plane->state);
-	int i;
-
-	/* Can't memcpy_toio() because it needs to be 32-bit writes. */
-	for (i = 0; i < vc4_state->dlist_count; i++)
-		writel(vc4_state->dlist[i], &dlist[i]);
-
-	return vc4_state->dlist_count;
-}
-
-u32 vc4_plane_dlist_size(struct drm_plane_state *state)
-{
-	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
-
-	return vc4_state->dlist_count;
+	if (plane->type == DRM_PLANE_TYPE_CURSOR) {
+		if (plane_enabled(plane->state))
+			vc4_plane_atomic_update_cursor(plane, old_state);
+		else
+			vc4_plane_cursor_disable(plane, old_state);
+	} else {
+		if (plane_enabled(plane->state))
+			vc4_plane_atomic_update_primary(plane, old_state);
+		else
+			vc4_plane_atomic_disable(plane, old_state);
+	}
 }
 
 static const struct drm_plane_helper_funcs vc4_plane_helper_funcs = {
@@ -278,6 +318,15 @@ struct drm_plane *vc4_plane_init(struct drm_device *dev,
 	if (!vc4_plane) {
 		ret = -ENOMEM;
 		goto fail;
+	}
+
+	if (type == DRM_PLANE_TYPE_PRIMARY) {
+		vc4_plane->fbinfo =
+			dma_alloc_coherent(dev->dev,
+					   sizeof(*vc4_plane->fbinfo),
+					   &vc4_plane->fbinfo_bus_addr,
+					   GFP_KERNEL);
+		memset(vc4_plane->fbinfo, 0, sizeof(*vc4_plane->fbinfo));
 	}
 
 	for (i = 0; i < ARRAY_SIZE(hvs_formats); i++)

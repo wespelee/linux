@@ -15,7 +15,6 @@ struct vc4_dev {
 	struct device_node *firmware_node;
 
 	struct vc4_hdmi *hdmi;
-	struct vc4_hvs *hvs;
 	struct vc4_crtc *crtc[3];
 	struct vc4_v3d *v3d;
 
@@ -120,25 +119,9 @@ struct vc4_v3d {
 	void __iomem *regs;
 };
 
-struct vc4_hvs {
-	struct platform_device *pdev;
-	void __iomem *regs;
-	void __iomem *dlist;
-};
-
 struct vc4_crtc {
 	struct drm_crtc base;
 	void __iomem *regs;
-
-	u32 displist_reg;
-
-	/*
-	 * Pointer to the actual hardware display list memory for the
-	 * crtc.
-	 */
-	u32 __iomem *dlist;
-
-	u32 dlist_size; /* in dwords */
 };
 
 static inline struct vc4_crtc *
@@ -149,6 +132,9 @@ to_vc4_crtc(struct drm_crtc *crtc)
 
 struct vc4_plane {
 	struct drm_plane base;
+	struct fbinfo_s *fbinfo;
+	dma_addr_t fbinfo_bus_addr;
+	u32 pitch;
 };
 
 static inline struct vc4_plane *

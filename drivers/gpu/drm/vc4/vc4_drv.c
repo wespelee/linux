@@ -212,7 +212,6 @@ vc4_platform_drm_probe(struct platform_device *pdev)
 	add_components(&pdev->dev, &match, "gpus");
 	add_components(&pdev->dev, &match, "crtcs");
 	add_components(&pdev->dev, &match, "encoders");
-	add_components(&pdev->dev, &match, "hvss");
 
 	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 	return component_master_add_with_match(&pdev->dev, &vc4_drm_ops, match);
@@ -247,14 +246,12 @@ static int __init vc4_drm_register(void)
 	vc4_v3d_register();
 	vc4_hdmi_register();
 	vc4_crtc_register();
-	vc4_hvs_register();
 	return platform_driver_register(&vc4_platform_driver);
 }
 
 static void __exit vc4_drm_unregister(void)
 {
 	platform_driver_unregister(&vc4_platform_driver);
-	vc4_hvs_unregister();
 	vc4_crtc_unregister();
 	vc4_hdmi_unregister();
 	vc4_v3d_unregister();
