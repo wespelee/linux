@@ -374,6 +374,7 @@ void __iomem *vc4_ioremap_regs(struct platform_device *dev, int index);
 
 /* vc4_gem.c */
 void vc4_gem_init(struct drm_device *dev);
+void vc4_gem_destroy(struct drm_device *dev);
 int vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 			struct drm_file *file_priv);
 int vc4_wait_seqno_ioctl(struct drm_device *dev, void *data,
