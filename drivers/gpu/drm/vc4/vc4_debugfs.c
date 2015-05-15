@@ -19,6 +19,7 @@ static const struct drm_info_list vc4_debugfs_list[] = {
 	{"v3d_ident", vc4_v3d_debugfs_ident, 0},
 	{"v3d_regs", vc4_v3d_debugfs_regs, 0},
 	{"hdmi_regs", vc4_hdmi_debugfs_regs, 0},
+	{"bo_stats", vc4_bo_stats_debugfs, 0},
 };
 #define VC4_DEBUGFS_ENTRIES ARRAY_SIZE(vc4_debugfs_list)
 
