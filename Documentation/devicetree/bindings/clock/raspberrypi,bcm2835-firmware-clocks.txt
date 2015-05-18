@@ -1,0 +1,25 @@
+Raspberry Pi firmware clock provider.
+
+The Raspberry Pi architecture doesn't provide direct access to the
+CLOCKMAN peripheral from the ARM side, so Linux has to make requests
+to the VPU firmware to program them.
+
+This binding uses the common clock binding:
+Documentation/devicetree/bindings/clock/clock-bindings.txt
+
+Required properties:
+- compatible:		Should be "raspberrypi,bcm2835-firmware-clocks"
+
+- #clock-cells:		Shall have value <1>.  The permitted clock-specifier
+			  values can be found in
+			  include/dt-bindings/clk/raspberrypi.h.
+
+- raspberrypi,firmware:	Phandle to the firmware driver node.
+
+Example:
+
+firmware_clocks: firmware-clocks {
+	compatible = "raspberrypi,bcm2835-firmware-clocks";
+	#clock-cells = <1>;
+	raspberrypi,firmware = <&firmware>;
+};
