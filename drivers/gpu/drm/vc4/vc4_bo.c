@@ -128,6 +128,7 @@ struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t unaligned_size)
 	uint32_t size = roundup(unaligned_size, PAGE_SIZE);
 	uint32_t page_index = bo_page_index(size);
 	struct drm_gem_cma_object *cma_obj;
+	int pass;
 
 	if (size == 0)
 		return NULL;
@@ -146,16 +147,32 @@ struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t unaligned_size)
 	}
 	spin_unlock(&vc4->bo_lock);
 
-	cma_obj = drm_gem_cma_create(dev, size);
-	if (IS_ERR(cma_obj)) {
-		/*
-		 * If we've run out of CMA memory, kill the cache of
-		 * CMA allocations we've got laying around and try again.
-		 */
-		vc4_bo_cache_purge(dev);
-
+	/* Otherwise, make a new BO. */
+	for (pass = 0; ; pass++) {
 		cma_obj = drm_gem_cma_create(dev, size);
-		if (IS_ERR(cma_obj)) {
+		if (!IS_ERR(cma_obj))
+			break;
+
+		switch (pass) {
+		case 0:
+			/*
+			 * If we've run out of CMA memory, kill the cache of
+			 * CMA allocations we've got laying around and try again.
+			 */
+			vc4_bo_cache_purge(dev);
+			break;
+		case 1:
+			/*
+			 * Getting desperate, so try to wait for any
+			 * previous rendering to finish, free its
+			 * unreferenced BOs to the cache, and then
+			 * free the cache.
+			 */
+			vc4_wait_for_seqno(dev, vc4->emit_seqno, ~0ull);
+			vc4_job_handle_completed(vc4);
+			vc4_bo_cache_purge(dev);
+			break;
+		case 3:
 			DRM_ERROR("Failed to allocate from CMA:\n");
 			vc4_bo_stats_dump(vc4);
 			return NULL;

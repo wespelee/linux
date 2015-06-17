@@ -383,6 +383,9 @@ int vc4_wait_seqno_ioctl(struct drm_device *dev, void *data,
 int vc4_wait_bo_ioctl(struct drm_device *dev, void *data,
 		      struct drm_file *file_priv);
 void vc4_submit_next_job(struct drm_device *dev);
+int vc4_wait_for_seqno(struct drm_device *dev, uint64_t seqno,
+		       uint64_t timeout_ns);
+void vc4_job_handle_completed(struct vc4_dev *vc4);
 
 /* vc4_hdmi.c */
 extern struct platform_driver vc4_hdmi_driver;
