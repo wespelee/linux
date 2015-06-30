@@ -61,6 +61,8 @@ struct vc4_crtc {
 	u32 __iomem *dlist;
 
 	u32 dlist_size; /* in dwords */
+
+	struct drm_pending_vblank_event *event;
 };
 
 static inline struct vc4_crtc *
@@ -98,6 +100,7 @@ void vc4_crtc_register(void);
 void vc4_crtc_unregister(void);
 int vc4_enable_vblank(struct drm_device *dev, int crtc_id);
 void vc4_disable_vblank(struct drm_device *dev, int crtc_id);
+void vc4_cancel_page_flip(struct drm_crtc *crtc, struct drm_file *file);
 
 /* vc4_debugfs.c */
 int vc4_debugfs_init(struct drm_minor *minor);
