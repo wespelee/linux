@@ -18,6 +18,8 @@ struct vc4_dev {
 	struct vc4_hvs *hvs;
 	struct vc4_crtc *crtc[3];
 	struct vc4_v3d *v3d;
+
+	struct drm_fbdev_cma *fbdev;
 };
 
 static inline struct vc4_dev *
