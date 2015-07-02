@@ -77,6 +77,8 @@ int vc4_kms_load(struct drm_device *dev)
 	dev->mode_config.funcs = &vc4_mode_funcs;
 	dev->mode_config.preferred_depth = 24;
 
+	dev->vblank_disable_allowed = true;
+
 	ret = vc4_init_modeset_objects(dev);
 	if (ret)
 		goto fail;
