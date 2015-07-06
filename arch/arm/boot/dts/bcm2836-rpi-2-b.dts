@@ -24,17 +24,26 @@
 	};
 
 	timer {
+		interrupt-parent = <&local_intc>;
 		compatible = "arm,armv7-timer";
 		clock-frequency = <19200000>;
-		interrupts = <3 0>, // PHYS_SECURE_PPI
-			     <3 1>, // PHYS_NONSECURE_PPI
-			     <3 3>, // VIRT_PPI
-			     <3 2>; // HYP_PPI
+		interrupts = <0>, // PHYS_SECURE_PPI
+			     <1>, // PHYS_NONSECURE_PPI
+			     <3>, // VIRT_PPI
+			     <2>; // HYP_PPI
 		always-on;
 
 		clock {
 			compatible = "brcm,bcm2836-local-timer-clk";
 		};
+	};
+
+	local_intc: local_intc {
+		compatible = "brcm,bcm2836-l1-intc";
+		reg = <0x40000000 0x100>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&local_intc>;
 	};
 
 	cpus: cpus {
@@ -69,4 +78,14 @@
 			clock-frequency = <800000000>;
 		};
 	};
+};
+
+/* Make the BCM2835-style global interrupt controller be a child of the
+ * CPU-local interrupt controller.
+ */
+&intc {
+	compatible = "brcm,bcm2836-armctrl-ic";
+	reg = <0x7e00b200 0x200>;
+	interrupt-parent = <&local_intc>;
+	interrupts = <8>;
 };
