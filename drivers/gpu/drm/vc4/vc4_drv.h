@@ -119,7 +119,9 @@ struct vc4_bo {
 	/* List entry for the BO's position in vc4_dev->bo_cache.size_list */
 	struct list_head size_head;
 
-	/* Cached state from validation of the shader code. */
+	/* Struct for shader validation state, if created by
+	 * DRM_IOCTL_VC4_CREATE_SHADER_BO.
+	 */
 	struct vc4_validated_shader_info *validated_shader;
 };
 
@@ -360,8 +362,13 @@ struct dma_buf *vc4_prime_export(struct drm_device *dev,
 				 struct drm_gem_object *obj, int flags);
 int vc4_create_bo_ioctl(struct drm_device *dev, void *data,
 			struct drm_file *file_priv);
+int vc4_create_shader_bo_ioctl(struct drm_device *dev, void *data,
+			       struct drm_file *file_priv);
 int vc4_mmap_bo_ioctl(struct drm_device *dev, void *data,
 		      struct drm_file *file_priv);
+int vc4_mmap(struct file *filp, struct vm_area_struct *vma);
+int vc4_prime_mmap(struct drm_gem_object *obj, struct vm_area_struct *vma);
+void *vc4_prime_vmap(struct drm_gem_object *obj);
 void vc4_bo_cache_init(struct drm_device *dev);
 void vc4_bo_cache_destroy(struct drm_device *dev);
 int vc4_bo_stats_debugfs(struct seq_file *m, void *arg);
