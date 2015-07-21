@@ -278,8 +278,14 @@ vc4_set_pixel_clock(struct vc4_dev *vc4, u32 clock)
 	u32 packet[2];
 	int ret;
 
-	packet[0] = 8; /* Pixel clock. */
+	packet[0] = 9; /* Pixel clock. */
 	packet[1] = clock;
+
+	/* Setting the pixel clock doesn't actually work yet.  The
+	 * screen goes black and no particular errors are visible in
+	 * the hardware's registers.
+	 */
+	return;
 
 	ret = rpi_firmware_property(vc4->firmware,
 				    RPI_FIRMWARE_SET_CLOCK_RATE,
