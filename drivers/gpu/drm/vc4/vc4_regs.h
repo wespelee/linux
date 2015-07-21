@@ -349,7 +349,9 @@
 
 #define VC4_HDMI_TX_PHY_RESET_CTL		0x2c0
 
-#define VC4_HD_M_CTL				0x000
+#define VC4_HD_M_CTL				0x00c
+# define VC4_HD_M_ENABLE			(1 << 0)
+
 #define VC4_HD_MAI_CTL				0x014
 
 #define VC4_HD_VID_CTL				0x038

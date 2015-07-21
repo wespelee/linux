@@ -533,6 +533,9 @@ static int vc4_hdmi_bind(struct device *dev, struct device *master, void *data)
 
 	vc4->hdmi = hdmi;
 
+	/* HDMI core must be enabled. */
+	WARN_ON_ONCE((HD_READ(VC4_HD_M_CTL) & VC4_HD_M_ENABLE) == 0);
+
 	return 0;
 }
 
