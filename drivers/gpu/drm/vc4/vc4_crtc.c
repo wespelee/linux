@@ -52,6 +52,36 @@ vc4_crtc_dump_regs(struct vc4_crtc *vc4_crtc)
 	}
 }
 
+#ifdef CONFIG_DEBUG_FS
+int vc4_crtc_debugfs_regs(struct seq_file *m, void *unused)
+{
+	struct drm_info_node *node = (struct drm_info_node *) m->private;
+	struct drm_device *dev = node->minor->dev;
+	int crtc_index = (uintptr_t)node->info_ent->data;
+	struct drm_crtc *crtc;
+	struct vc4_crtc *vc4_crtc;
+	int i;
+
+	i = 0;
+	list_for_each_entry(crtc, &dev->mode_config.crtc_list, head) {
+		if (i == crtc_index)
+			break;
+		i++;
+	}
+	if (!crtc)
+		return 0;
+	vc4_crtc = to_vc4_crtc(crtc);
+
+	for (i = 0; i < ARRAY_SIZE(crtc_regs); i++) {
+		seq_printf(m, "%s (0x%04x): 0x%08x\n",
+			   crtc_regs[i].name, crtc_regs[i].reg,
+			   CRTC_READ(crtc_regs[i].reg));
+	}
+
+	return 0;
+}
+#endif
+
 static void vc4_crtc_destroy(struct drm_crtc *crtc)
 {
 	drm_crtc_cleanup(crtc);
