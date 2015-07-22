@@ -289,7 +289,11 @@
 #define SCALER_DLIST_SIZE                       0x00004000
 
 #define VC4_HDMI_CORE_REV			0x000
+
 #define VC4_HDMI_SW_RESET_CONTROL		0x004
+# define VC4_HDMI_SW_RESET_FORMAT_DETECT	(1 << 1)
+# define VC4_HDMI_SW_RESET_HDMI			(1 << 0)
+
 #define VC4_HDMI_HOTPLUG_INT			0x008
 
 #define VC4_HDMI_HOTPLUG			0x00c
@@ -350,6 +354,7 @@
 #define VC4_HDMI_TX_PHY_RESET_CTL		0x2c0
 
 #define VC4_HD_M_CTL				0x00c
+# define VC4_HD_M_SW_RST			(1 << 2)
 # define VC4_HD_M_ENABLE			(1 << 0)
 
 #define VC4_HD_MAI_CTL				0x014
