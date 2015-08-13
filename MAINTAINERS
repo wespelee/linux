@@ -3653,6 +3653,12 @@ S:	Maintained
 F:	drivers/gpu/drm/sti
 F:	Documentation/devicetree/bindings/gpu/st,stih4xx.txt
 
+DRM DRIVERS FOR VC4
+M:	Eric Anholt <eric@anholt.net>
+T:	git git://github.com/anholt/linux
+S:	Supported
+F:	drivers/gpu/drm/vc4/*
+
 DSBR100 USB FM RADIO DRIVER
 M:	Alexey Klimov <klimov.linux@gmail.com>
 L:	linux-media@vger.kernel.org
