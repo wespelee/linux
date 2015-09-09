@@ -4,6 +4,7 @@
  * Copyright 2003 José Fonseca.
  * Copyright 2003 Leif Delgass.
  * Copyright (c) 2009, Code Aurora Forum.
+ * Copyright (c) 2011 Samsung Electronics Co., Ltd.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -104,3 +105,37 @@ int drm_platform_init(struct drm_driver *driver, struct platform_device *platfor
 	return drm_get_platform_dev(platform_device, driver);
 }
 EXPORT_SYMBOL(drm_platform_init);
+
+/**
+ * drm_platform_register_drivers - Helper to register an array of
+ * struct platform_drivers.
+ */
+int drm_platform_register_drivers(struct platform_driver *const *drv,
+				  int count)
+{
+	int i, ret;
+
+	for (i = 0; i < count; ++i) {
+		ret = platform_driver_register(drv[i]);
+		if (!ret)
+			continue;
+
+		while (--i >= 0)
+			platform_driver_unregister(drv[i]);
+
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * drm_platform_register_drivers - Helper to unregister an array of
+ * struct platform_drivers.
+ */
+void drm_platform_unregister_drivers(struct platform_driver *const *drv,
+				     int count)
+{
+	while (--count >= 0)
+		platform_driver_unregister(drv[count]);
+}
