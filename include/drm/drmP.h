@@ -88,6 +88,7 @@ struct device_node;
 struct videomode;
 struct reservation_object;
 struct dma_buf_attachment;
+struct component_match;
 
 /*
  * 4 debug categories are defined:
@@ -1090,6 +1091,10 @@ int drm_platform_register_drivers(struct platform_driver *const *drv,
 				  int count);
 void drm_platform_unregister_drivers(struct platform_driver *const *drv,
 				     int count);
+void drm_platform_component_match_add_drivers(struct device *dev,
+					      struct component_match **match,
+					      struct platform_driver **drivers,
+					      int count);
 
 /* returns true if currently okay to sleep */
 static __inline__ bool drm_can_sleep(void)

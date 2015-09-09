@@ -402,32 +402,6 @@ static struct platform_driver *const exynos_drm_drv_with_simple_dev[] = {
 };
 #define PDEV_COUNT ARRAY_SIZE(exynos_drm_drv_with_simple_dev)
 
-static int compare_dev(struct device *dev, void *data)
-{
-	return dev == (struct device *)data;
-}
-
-static struct component_match *exynos_drm_match_add(struct device *dev)
-{
-	struct component_match *match = NULL;
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(exynos_drm_kms_drivers); ++i) {
-		struct device_driver *drv = &exynos_drm_kms_drivers[i]->driver;
-		struct device *p = NULL, *d;
-
-		while ((d = bus_find_device(&platform_bus_type, p, drv,
-					    (void *)platform_bus_type.match))) {
-			put_device(p);
-			component_match_add(dev, &match, compare_dev, d);
-			p = d;
-		}
-		put_device(p);
-	}
-
-	return match ?: ERR_PTR(-ENODEV);
-}
-
 static int exynos_drm_bind(struct device *dev)
 {
 	return drm_platform_init(&exynos_drm_driver, to_platform_device(dev));
@@ -445,14 +419,17 @@ static const struct component_master_ops exynos_drm_ops = {
 
 static int exynos_drm_platform_probe(struct platform_device *pdev)
 {
-	struct component_match *match;
+	struct component_match *match = NULL;
 
 	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 	exynos_drm_driver.num_ioctls = ARRAY_SIZE(exynos_ioctls);
 
-	match = exynos_drm_match_add(&pdev->dev);
-	if (IS_ERR(match))
-		return PTR_ERR(match);
+	drm_platform_component_match_add_drivers(&pdev->dev, &match,
+						 exynos_drm_kms_drivers,
+						 ARRAY_SIZE(exynos_drm_kms_drivers));
+
+	if (!match)
+		return -ENODEV;
 
 	return component_master_add_with_match(&pdev->dev, &exynos_drm_ops,
 					       match);

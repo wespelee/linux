@@ -26,6 +26,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <linux/component.h>
 #include <linux/export.h>
 #include <drm/drmP.h>
 
@@ -139,3 +140,35 @@ void drm_platform_unregister_drivers(struct platform_driver *const *drv,
 	while (--count >= 0)
 		platform_driver_unregister(drv[count]);
 }
+
+static int compare_dev(struct device *dev, void *data)
+{
+	return dev == (struct device *)data;
+}
+
+/**
+ * drm_platform_component_match_add_drivers - For each driver passed
+ * in, finds each device that matched to it and adds it as a component
+ * driver to the match list.
+ */
+void drm_platform_component_match_add_drivers(struct device *dev,
+					      struct component_match **match,
+					      struct platform_driver *const *drivers,
+					      int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		struct device_driver *drv = &drivers[i]->driver;
+		struct device *p = NULL, *d;
+
+		while ((d = bus_find_device(&platform_bus_type, p, drv,
+					    (void *)platform_bus_type.match))) {
+			put_device(p);
+			component_match_add(dev, match, compare_dev, d);
+			p = d;
+		}
+		put_device(p);
+	}
+}
+EXPORT_SYMBOL_GPL(drm_platform_component_match_add_drivers);
