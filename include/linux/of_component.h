@@ -12,4 +12,9 @@ void of_component_match_add_children(struct device *dev,
 				     struct component_match **match,
 				     struct device_node *node);
 
+void of_component_match_add_phandles(struct device *dev,
+				     struct component_match **match,
+				     struct device_node *node,
+				     const char *name);
+
 #endif /* __OF_COMPONENT_H */

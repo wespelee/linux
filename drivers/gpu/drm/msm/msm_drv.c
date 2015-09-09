@@ -964,34 +964,7 @@ static const struct dev_pm_ops msm_pm_ops = {
  * Componentized driver support:
  */
 
-#ifdef CONFIG_OF
-/* NOTE: the CONFIG_OF case duplicates the same code as exynos or imx
- * (or probably any other).. so probably some room for some helpers
- */
-static int compare_of(struct device *dev, void *data)
-{
-	return dev->of_node == data;
-}
-
-static int add_components(struct device *dev, struct component_match **matchptr,
-		const char *name)
-{
-	struct device_node *np = dev->of_node;
-	unsigned i;
-
-	for (i = 0; ; i++) {
-		struct device_node *node;
-
-		node = of_parse_phandle(np, name, i);
-		if (!node)
-			break;
-
-		component_match_add(dev, matchptr, compare_of, node);
-	}
-
-	return 0;
-}
-#else
+#ifndef CONFIG_OF
 static int compare_dev(struct device *dev, void *data)
 {
 	return dev == data;
@@ -1021,8 +994,10 @@ static int msm_pdev_probe(struct platform_device *pdev)
 {
 	struct component_match *match = NULL;
 #ifdef CONFIG_OF
-	add_components(&pdev->dev, &match, "connectors");
-	add_components(&pdev->dev, &match, "gpus");
+	of_component_match_add(&pdev->dev, pdev->dev.of_node, &match,
+			       "connectors");
+	of_component_match_add(&pdev->dev, pdev->dev.of_node, &match,
+			       "gpus");
 #else
 	/* For non-DT case, it kinda sucks.  We don't actually have a way
 	 * to know whether or not we are waiting for certain devices (or if

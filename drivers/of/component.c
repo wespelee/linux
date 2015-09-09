@@ -2,6 +2,7 @@
  *
  * Copyright (C) STMicroelectronics SA 2014
  * Copyright (C) 2015 Broadcom Corporation
+ * Copyright (C) 2013 Red Hat
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -32,3 +33,25 @@ void of_component_match_add_children(struct device *dev,
 		child_np = of_get_next_available_child(node, child_np);
 	}
 }
+
+/* Given a node, add all the phandles in the list under "name" as
+ * component matches.
+ */
+void of_component_match_add_phandles(struct device *dev,
+				     struct component_match **match,
+				     struct device_node *node,
+				     const char *name)
+{
+	unsigned i;
+
+	for (i = 0; ; i++) {
+		struct device_node *child;
+
+		child = of_parse_phandle(node, name, i);
+		if (!child)
+			break;
+
+		component_match_add(dev, match, compare_of_node, child);
+	}
+}
+EXPORT_SYMBOL_GPL(of_component_match_add_phandles);
