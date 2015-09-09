@@ -9,6 +9,7 @@
 #include <linux/clk.h>
 #include <linux/component.h>
 #include <linux/module.h>
+#include <linux/of_component.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
@@ -676,11 +677,6 @@ static const struct component_ops sti_tvout_ops = {
 	.unbind	= sti_tvout_unbind,
 };
 
-static int compare_of(struct device *dev, void *data)
-{
-	return dev->of_node == data;
-}
-
 static int sti_tvout_master_bind(struct device *dev)
 {
 	return 0;
@@ -702,7 +698,6 @@ static int sti_tvout_probe(struct platform_device *pdev)
 	struct device_node *node = dev->of_node;
 	struct sti_tvout *tvout;
 	struct resource *res;
-	struct device_node *child_np;
 	struct component_match *match = NULL;
 
 	DRM_INFO("%s\n", __func__);
@@ -735,15 +730,7 @@ static int sti_tvout_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, tvout);
 
 	of_platform_populate(node, NULL, NULL, dev);
-
-	child_np = of_get_next_available_child(node, NULL);
-
-	while (child_np) {
-		component_match_add(dev, &match, compare_of, child_np);
-		of_node_put(child_np);
-		child_np = of_get_next_available_child(node, child_np);
-	}
-
+	of_component_match_add_children(dev, &match, node);
 	component_master_add_with_match(dev, &sti_tvout_master_ops, match);
 
 	return component_add(dev, &sti_tvout_ops);

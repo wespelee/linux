@@ -10,6 +10,7 @@
 #include <linux/debugfs.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/of_component.h>
 #include <linux/of_platform.h>
 
 #include <drm/drm_atomic.h>
@@ -222,11 +223,6 @@ static struct drm_driver sti_drm_driver = {
 	.minor = DRIVER_MINOR,
 };
 
-static int compare_of(struct device *dev, void *data)
-{
-	return dev->of_node == data;
-}
-
 static int sti_drm_bind(struct device *dev)
 {
 	return drm_platform_init(&sti_drm_driver, to_platform_device(dev));
@@ -246,18 +242,11 @@ static int sti_drm_master_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *node = dev->parent->of_node;
-	struct device_node *child_np;
 	struct component_match *match = NULL;
 
 	dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
 
-	child_np = of_get_next_available_child(node, NULL);
-
-	while (child_np) {
-		component_match_add(dev, &match, compare_of, child_np);
-		of_node_put(child_np);
-		child_np = of_get_next_available_child(node, child_np);
-	}
+	of_component_match_add_children(dev, &match, node);
 
 	return component_master_add_with_match(dev, &sti_drm_ops, match);
 }
