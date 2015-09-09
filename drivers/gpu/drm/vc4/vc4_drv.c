@@ -186,38 +186,21 @@ static const struct component_master_ops vc4_drm_ops = {
 	.unbind = vc4_drm_unbind,
 };
 
-static int compare_of(struct device *dev, void *data)
-{
-	return dev->of_node == data;
-}
-
-static int add_components(struct device *dev, struct component_match **matchptr,
-			  const char *name)
-{
-	struct device_node *np = dev->of_node;
-	unsigned i;
-
-	for (i = 0; ; i++) {
-		struct device_node *node;
-
-		node = of_parse_phandle(np, name, i);
-		if (!node)
-			break;
-
-		component_match_add(dev, matchptr, compare_of, node);
-	}
-
-	return 0;
-}
+static struct platform_driver *component_drivers[] = {
+	&vc4_hdmi_driver,
+	&vc4_crtc_driver,
+	&vc4_hvs_driver,
+};
 
 static int vc4_platform_drm_probe(struct platform_device *pdev)
 {
 	struct component_match *match = NULL;
 	struct device *dev = &pdev->dev;
 
-	add_components(dev, &match, "crtcs");
-	add_components(dev, &match, "encoders");
-	add_components(dev, &match, "hvss");
+	drm_platform_component_match_add_drivers(dev,
+						 &match,
+						 component_drivers,
+						 ARRAY_SIZE(component_drivers));
 
 	return component_master_add_with_match(dev, &vc4_drm_ops, match);
 }
@@ -243,12 +226,6 @@ static struct platform_driver vc4_platform_driver = {
 		.owner	= THIS_MODULE,
 		.of_match_table = vc4_of_match,
 	},
-};
-
-static struct platform_driver *component_drivers[] = {
-	&vc4_hdmi_driver,
-	&vc4_crtc_driver,
-	&vc4_hvs_driver,
 };
 
 static int __init vc4_drm_register(void)
