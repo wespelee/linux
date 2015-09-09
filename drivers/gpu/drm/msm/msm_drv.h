@@ -230,12 +230,10 @@ struct drm_fb_helper *msm_fbdev_init(struct drm_device *dev);
 struct hdmi;
 int hdmi_modeset_init(struct hdmi *hdmi, struct drm_device *dev,
 		struct drm_encoder *encoder);
-void __init hdmi_register(void);
-void __exit hdmi_unregister(void);
+extern struct platform_driver msm_hdmi_driver;
 
 struct msm_edp;
-void __init msm_edp_register(void);
-void __exit msm_edp_unregister(void);
+extern struct platform_driver msm_edp_driver;
 int msm_edp_modeset_init(struct msm_edp *edp, struct drm_device *dev,
 		struct drm_encoder *encoder);
 
@@ -246,17 +244,11 @@ enum msm_dsi_encoder_id {
 	MSM_DSI_ENCODER_NUM = 2
 };
 #ifdef CONFIG_DRM_MSM_DSI
-void __init msm_dsi_register(void);
-void __exit msm_dsi_unregister(void);
+extern struct platform_driver msm_dsi_driver;
+extern struct platform_driver msm_dsi_phy_driver;
 int msm_dsi_modeset_init(struct msm_dsi *msm_dsi, struct drm_device *dev,
 		struct drm_encoder *encoders[MSM_DSI_ENCODER_NUM]);
 #else
-static inline void __init msm_dsi_register(void)
-{
-}
-static inline void __exit msm_dsi_unregister(void)
-{
-}
 static inline int msm_dsi_modeset_init(struct msm_dsi *msm_dsi,
 		struct drm_device *dev,
 		struct drm_encoder *encoders[MSM_DSI_ENCODER_NUM])

@@ -469,7 +469,7 @@ static int hdmi_dev_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver hdmi_driver = {
+struct platform_driver msm_hdmi_driver = {
 	.probe = hdmi_dev_probe,
 	.remove = hdmi_dev_remove,
 	.driver = {
@@ -477,13 +477,3 @@ static struct platform_driver hdmi_driver = {
 		.of_match_table = dt_match,
 	},
 };
-
-void __init hdmi_register(void)
-{
-	platform_driver_register(&hdmi_driver);
-}
-
-void __exit hdmi_unregister(void)
-{
-	platform_driver_unregister(&hdmi_driver);
-}

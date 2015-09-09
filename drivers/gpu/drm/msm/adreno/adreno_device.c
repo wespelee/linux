@@ -286,7 +286,7 @@ static const struct of_device_id dt_match[] = {
 	{}
 };
 
-static struct platform_driver adreno_driver = {
+struct platform_driver adreno_driver = {
 	.probe = adreno_probe,
 	.remove = adreno_remove,
 	.driver = {
@@ -294,13 +294,3 @@ static struct platform_driver adreno_driver = {
 		.of_match_table = dt_match,
 	},
 };
-
-void __init adreno_register(void)
-{
-	platform_driver_register(&adreno_driver);
-}
-
-void __exit adreno_unregister(void)
-{
-	platform_driver_unregister(&adreno_driver);
-}

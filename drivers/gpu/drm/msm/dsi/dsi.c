@@ -169,7 +169,7 @@ static const struct of_device_id dt_match[] = {
 	{}
 };
 
-static struct platform_driver dsi_driver = {
+struct platform_driver msm_dsi_driver = {
 	.probe = dsi_dev_probe,
 	.remove = dsi_dev_remove,
 	.driver = {
@@ -177,20 +177,6 @@ static struct platform_driver dsi_driver = {
 		.of_match_table = dt_match,
 	},
 };
-
-void __init msm_dsi_register(void)
-{
-	DBG("");
-	msm_dsi_phy_driver_register();
-	platform_driver_register(&dsi_driver);
-}
-
-void __exit msm_dsi_unregister(void)
-{
-	DBG("");
-	msm_dsi_phy_driver_unregister();
-	platform_driver_unregister(&dsi_driver);
-}
 
 int msm_dsi_modeset_init(struct msm_dsi *msm_dsi, struct drm_device *dev,
 		struct drm_encoder *encoders[MSM_DSI_ENCODER_NUM])

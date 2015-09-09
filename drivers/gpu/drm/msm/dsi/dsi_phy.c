@@ -538,7 +538,7 @@ static int dsi_phy_driver_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver dsi_phy_platform_driver = {
+struct platform_driver msm_dsi_phy_driver = {
 	.probe      = dsi_phy_driver_probe,
 	.remove     = dsi_phy_driver_remove,
 	.driver     = {
@@ -546,16 +546,6 @@ static struct platform_driver dsi_phy_platform_driver = {
 		.of_match_table = dsi_phy_dt_match,
 	},
 };
-
-void __init msm_dsi_phy_driver_register(void)
-{
-	platform_driver_register(&dsi_phy_platform_driver);
-}
-
-void __exit msm_dsi_phy_driver_unregister(void)
-{
-	platform_driver_unregister(&dsi_phy_platform_driver);
-}
 
 int msm_dsi_phy_enable(struct msm_dsi_phy *phy, bool is_dual_panel,
 	const unsigned long bit_rate, const unsigned long esc_rate)

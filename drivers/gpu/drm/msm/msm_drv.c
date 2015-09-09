@@ -1084,13 +1084,25 @@ static struct platform_driver msm_platform_driver = {
 	.id_table   = msm_id,
 };
 
+static struct platform_driver *const component_drivers[] = {
+#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
+	&msm_dsi_phy_driver,
+	&msm_dsi_driver,
+#endif
+	&msm_hdmi_driver,
+	&adreno_driver,
+};
+
 static int __init msm_drm_register(void)
 {
+	int ret;
+
 	DBG("init");
-	msm_dsi_register();
-	msm_edp_register();
-	hdmi_register();
-	adreno_register();
+	ret = drm_platform_register_drivers(component_drivers,
+					    ARRAY_SIZE(component_drivers));
+	if (ret)
+		return ret;
+
 	return platform_driver_register(&msm_platform_driver);
 }
 
@@ -1098,10 +1110,8 @@ static void __exit msm_drm_unregister(void)
 {
 	DBG("fini");
 	platform_driver_unregister(&msm_platform_driver);
-	hdmi_unregister();
-	adreno_unregister();
-	msm_edp_unregister();
-	msm_dsi_unregister();
+	drm_platform_unregister_drivers(component_drivers,
+					ARRAY_SIZE(component_drivers));
 }
 
 module_init(msm_drm_register);

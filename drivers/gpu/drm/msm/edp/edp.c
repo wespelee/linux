@@ -122,7 +122,7 @@ static const struct of_device_id dt_match[] = {
 	{}
 };
 
-static struct platform_driver edp_driver = {
+struct platform_driver msm_edp_driver = {
 	.probe = edp_dev_probe,
 	.remove = edp_dev_remove,
 	.driver = {
@@ -130,18 +130,6 @@ static struct platform_driver edp_driver = {
 		.of_match_table = dt_match,
 	},
 };
-
-void __init msm_edp_register(void)
-{
-	DBG("");
-	platform_driver_register(&edp_driver);
-}
-
-void __exit msm_edp_unregister(void)
-{
-	DBG("");
-	platform_driver_unregister(&edp_driver);
-}
 
 /* Second part of initialization, the drm/kms level modeset_init */
 int msm_edp_modeset_init(struct msm_edp *edp, struct drm_device *dev,
