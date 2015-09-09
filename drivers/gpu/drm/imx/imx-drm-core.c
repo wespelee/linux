@@ -560,22 +560,8 @@ static int imx_drm_platform_probe(struct platform_device *pdev)
 		if (!port)
 			break;
 
-		for_each_child_of_node(port, ep) {
-			remote = of_graph_get_remote_port_parent(ep);
-			if (!remote || !of_device_is_available(remote)) {
-				of_node_put(remote);
-				continue;
-			} else if (!of_device_is_available(remote->parent)) {
-				dev_warn(&pdev->dev, "parent device of %s is not available\n",
-					 remote->full_name);
-				of_node_put(remote);
-				continue;
-			}
+		of_graph_component_add_endpoints(dev, &match, port);
 
-			component_match_add(&pdev->dev, &match, compare_of,
-					    remote);
-			of_node_put(remote);
-		}
 		of_node_put(port);
 	}
 
