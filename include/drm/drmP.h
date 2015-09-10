@@ -1093,7 +1093,7 @@ void drm_platform_unregister_drivers(struct platform_driver *const *drv,
 				     int count);
 void drm_platform_component_match_add_drivers(struct device *dev,
 					      struct component_match **match,
-					      struct platform_driver **drivers,
+					      struct platform_driver *const *drivers,
 					      int count);
 
 /* returns true if currently okay to sleep */

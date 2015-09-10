@@ -964,34 +964,7 @@ static const struct dev_pm_ops msm_pm_ops = {
  * Componentized driver support:
  */
 
-#ifdef CONFIG_OF
-/* NOTE: the CONFIG_OF case duplicates the same code as exynos or imx
- * (or probably any other).. so probably some room for some helpers
- */
-static int compare_of(struct device *dev, void *data)
-{
-	return dev->of_node == data;
-}
-
-static int add_components(struct device *dev, struct component_match **matchptr,
-		const char *name)
-{
-	struct device_node *np = dev->of_node;
-	unsigned i;
-
-	for (i = 0; ; i++) {
-		struct device_node *node;
-
-		node = of_parse_phandle(np, name, i);
-		if (!node)
-			break;
-
-		component_match_add(dev, matchptr, compare_of, node);
-	}
-
-	return 0;
-}
-#else
+#ifndef CONFIG_OF
 static int compare_dev(struct device *dev, void *data)
 {
 	return dev == data;
@@ -1013,6 +986,20 @@ static const struct component_master_ops msm_drm_ops = {
 	.unbind = msm_drm_unbind,
 };
 
+static struct platform_driver *const noncomponent_drivers[] = {
+#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
+	&msm_dsi_phy_driver,
+#endif
+};
+
+static struct platform_driver *const component_drivers[] = {
+#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
+	&msm_dsi_driver,
+#endif
+	&msm_hdmi_driver,
+	&adreno_driver,
+};
+
 /*
  * Platform driver:
  */
@@ -1021,8 +1008,9 @@ static int msm_pdev_probe(struct platform_device *pdev)
 {
 	struct component_match *match = NULL;
 #ifdef CONFIG_OF
-	add_components(&pdev->dev, &match, "connectors");
-	add_components(&pdev->dev, &match, "gpus");
+	drm_platform_component_match_add_drivers(&pdev->dev, &match,
+						 component_drivers,
+						 ARRAY_SIZE(component_drivers));
 #else
 	/* For non-DT case, it kinda sucks.  We don't actually have a way
 	 * to know whether or not we are waiting for certain devices (or if
@@ -1084,20 +1072,17 @@ static struct platform_driver msm_platform_driver = {
 	.id_table   = msm_id,
 };
 
-static struct platform_driver *const component_drivers[] = {
-#if IS_ENABLED(CONFIG_DRM_MSM_DSI)
-	&msm_dsi_phy_driver,
-	&msm_dsi_driver,
-#endif
-	&msm_hdmi_driver,
-	&adreno_driver,
-};
-
 static int __init msm_drm_register(void)
 {
 	int ret;
 
 	DBG("init");
+
+	ret = drm_platform_register_drivers(noncomponent_drivers,
+					    ARRAY_SIZE(noncomponent_drivers));
+	if (ret)
+		return ret;
+
 	ret = drm_platform_register_drivers(component_drivers,
 					    ARRAY_SIZE(component_drivers));
 	if (ret)
@@ -1112,6 +1097,8 @@ static void __exit msm_drm_unregister(void)
 	platform_driver_unregister(&msm_platform_driver);
 	drm_platform_unregister_drivers(component_drivers,
 					ARRAY_SIZE(component_drivers));
+	drm_platform_unregister_drivers(noncomponent_drivers,
+					ARRAY_SIZE(noncomponent_drivers));
 }
 
 module_init(msm_drm_register);
