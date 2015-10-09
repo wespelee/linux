@@ -8,7 +8,7 @@ Required properties for VC4:
 
 Required properties for Pixel Valve:
 - compatible:	Should be one of "brcm,bcm2835-pixelvalve0",
-		"brcm,bcm2835-pixelvalve1", or "brcm,bcm2835-pixelvalve2"
+		  "brcm,bcm2835-pixelvalve1", or "brcm,bcm2835-pixelvalve2"
 - reg:		Physical base address and length of the PV's registers
 - interrupts:	The interrupt number
 		  See bindings/interrupt-controller/brcm,bcm2835-armctrl-ic.txt
