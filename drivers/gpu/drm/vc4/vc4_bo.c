@@ -282,6 +282,19 @@ static void vc4_bo_cache_time_timer(unsigned long data)
 	schedule_work(&vc4->bo_cache.time_work);
 }
 
+struct dma_buf *
+vc4_prime_export(struct drm_device *dev, struct drm_gem_object *obj, int flags)
+{
+	struct vc4_bo *bo = to_vc4_bo(obj);
+
+	if (bo->validated_shader) {
+		DRM_ERROR("Attempting to export shader BO\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	return drm_gem_prime_export(dev, obj, flags);
+}
+
 void vc4_bo_cache_init(struct drm_device *dev)
 {
 	struct vc4_dev *vc4 = to_vc4_dev(dev);

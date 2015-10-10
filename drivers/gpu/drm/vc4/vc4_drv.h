@@ -348,6 +348,8 @@ struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t size);
 int vc4_dumb_create(struct drm_file *file_priv,
 		    struct drm_device *dev,
 		    struct drm_mode_create_dumb *args);
+struct dma_buf *vc4_prime_export(struct drm_device *dev,
+				 struct drm_gem_object *obj, int flags);
 void vc4_bo_cache_init(struct drm_device *dev);
 void vc4_bo_cache_destroy(struct drm_device *dev);
 int vc4_bo_stats_debugfs(struct seq_file *m, void *arg);
