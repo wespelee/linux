@@ -221,6 +221,12 @@
 			interrupts = <1 9>;
 		};
 
+		v3d@7ec00000 {
+			compatible = "brcm,vc4-v3d";
+			reg = <0x7ec00000 0x1000>;
+			interrupts = <1 10>;
+               };
+
 		arm-pmu {
 			compatible = "arm,arm1176-pmu";
 		};
