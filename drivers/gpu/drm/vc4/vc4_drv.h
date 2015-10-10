@@ -19,6 +19,37 @@ struct vc4_dev {
 
 	struct drm_fbdev_cma *fbdev;
 	struct rpi_firmware *firmware;
+
+	/* The kernel-space BO cache.  Tracks buffers that have been
+	 * unreferenced by all other users (refcounts of 0!) but not
+	 * yet freed, so we can do cheap allocations.
+	 */
+	struct vc4_bo_cache {
+		/* Array of list heads for entries in the BO cache,
+		 * based on number of pages, so we can do O(1) lookups
+		 * in the cache when allocating.
+		 */
+		struct list_head *size_list;
+		uint32_t size_list_size;
+
+		/* List of all BOs in the cache, ordered by age, so we
+		 * can do O(1) lookups when trying to free old
+		 * buffers.
+		 */
+		struct list_head time_list;
+		struct work_struct time_work;
+		struct timer_list time_timer;
+	} bo_cache;
+
+	struct vc4_bo_stats {
+		u32 num_allocated;
+		u32 size_allocated;
+		u32 num_cached;
+		u32 size_cached;
+	} bo_stats;
+
+	/* Protects bo_cache and the BO stats. */
+	spinlock_t bo_lock;
 };
 
 static inline struct vc4_dev *
@@ -29,6 +60,17 @@ to_vc4_dev(struct drm_device *dev)
 
 struct vc4_bo {
 	struct drm_gem_cma_object base;
+
+	/* List entry for the BO's position in either
+	 * vc4_exec_info->unref_list or vc4_dev->bo_cache.time_list
+	 */
+	struct list_head unref_head;
+
+	/* Time in jiffies when the BO was put in vc4->bo_cache. */
+	unsigned long free_time;
+
+	/* List entry for the BO's position in vc4_dev->bo_cache.size_list */
+	struct list_head size_head;
 };
 
 static inline struct vc4_bo *
@@ -90,8 +132,9 @@ struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t size);
 int vc4_dumb_create(struct drm_file *file_priv,
 		    struct drm_device *dev,
 		    struct drm_mode_create_dumb *args);
-struct dma_buf *vc4_prime_export(struct drm_device *dev,
-				 struct drm_gem_object *obj, int flags);
+void vc4_bo_cache_init(struct drm_device *dev);
+void vc4_bo_cache_destroy(struct drm_device *dev);
+int vc4_bo_stats_debugfs(struct seq_file *m, void *arg);
 
 /* vc4_crtc.c */
 extern struct platform_driver vc4_crtc_driver;
