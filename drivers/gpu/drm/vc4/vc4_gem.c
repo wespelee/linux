@@ -244,13 +244,15 @@ static void
 vc4_queue_submit(struct drm_device *dev, struct vc4_exec_info *exec)
 {
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
-	uint64_t seqno = ++vc4->emit_seqno;
+	uint64_t seqno;
 	unsigned long irqflags;
 
+	spin_lock_irqsave(&vc4->job_lock, irqflags);
+
+	seqno = ++vc4->emit_seqno;
 	exec->seqno = seqno;
 	vc4_update_bo_seqnos(exec, seqno);
 
-	spin_lock_irqsave(&vc4->job_lock, irqflags);
 	list_add_tail(&exec->head, &vc4->job_list);
 
 	/* If no job was executing, kick ours off.  Otherwise, it'll
@@ -437,10 +439,12 @@ fail:
 }
 
 static void
-vc4_complete_exec(struct vc4_exec_info *exec)
+vc4_complete_exec(struct drm_device *dev, struct vc4_exec_info *exec)
 {
 	unsigned i;
 
+	/* Need the struct lock for drm_gem_object_unreference(). */
+	mutex_lock(&dev->struct_mutex);
 	if (exec->bo) {
 		for (i = 0; i < exec->bo_count; i++)
 			drm_gem_object_unreference(&exec->bo[i].bo->base);
@@ -453,6 +457,7 @@ vc4_complete_exec(struct vc4_exec_info *exec)
 		list_del(&bo->unref_head);
 		drm_gem_object_unreference(&bo->base.base);
 	}
+	mutex_unlock(&dev->struct_mutex);
 
 	kfree(exec);
 }
@@ -471,7 +476,7 @@ vc4_job_handle_completed(struct vc4_dev *vc4)
 		list_del(&exec->head);
 
 		spin_unlock_irqrestore(&vc4->job_lock, irqflags);
-		vc4_complete_exec(exec);
+		vc4_complete_exec(vc4->dev, exec);
 		spin_lock_irqsave(&vc4->job_lock, irqflags);
 	}
 
@@ -523,12 +528,8 @@ vc4_job_done_work(struct work_struct *work)
 {
 	struct vc4_dev *vc4 =
 		container_of(work, struct vc4_dev, job_done_work);
-	struct drm_device *dev = vc4->dev;
 
-	/* Need the struct lock for drm_gem_object_unreference(). */
-	mutex_lock(&dev->struct_mutex);
 	vc4_job_handle_completed(vc4);
-	mutex_unlock(&dev->struct_mutex);
 }
 
 static int
@@ -608,8 +609,6 @@ vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 	exec->args = args;
 	INIT_LIST_HEAD(&exec->unref_list);
 
-	mutex_lock(&dev->struct_mutex);
-
 	ret = vc4_cl_lookup_bos(dev, file_priv, exec);
 	if (ret)
 		goto fail;
@@ -636,14 +635,10 @@ vc4_submit_cl_ioctl(struct drm_device *dev, void *data,
 	/* Return the seqno for our job. */
 	args->seqno = vc4->emit_seqno;
 
-	mutex_unlock(&dev->struct_mutex);
-
 	return 0;
 
 fail:
-	vc4_complete_exec(exec);
-
-	mutex_unlock(&dev->struct_mutex);
+	vc4_complete_exec(vc4->dev, exec);
 
 	return ret;
 }
